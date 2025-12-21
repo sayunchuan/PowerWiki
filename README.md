@@ -37,8 +37,8 @@
 1. **克隆项目**
 
 ```bash
-git clone https://github.com/your-username/powerwiki.git
-cd powerwiki
+git clone https://github.com/steven-ld/PowerWiki.git
+cd PowerWiki
 ```
 
 2. **安装依赖**
@@ -60,7 +60,7 @@ cp config.example.json config.json
 ```json
 {
   "gitRepo": "https://github.com/your-username/your-wiki-repo.git",
-  "repoBranch": "main",
+  "repoBranch": "master",
   "mdPath": "",
   "port": 3000,
   "siteTitle": "我的知识库",
@@ -276,8 +276,8 @@ PowerWiki/
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 [Issue](https://github.com/your-username/powerwiki/issues)
-- 发送邮件至: your-email@example.com
+- 提交 [Issue](https://github.com/steven-ld/PowerWiki/issues)
+- 发送邮件至: 1852896007@qq.com
 
 ---
 
