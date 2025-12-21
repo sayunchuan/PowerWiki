@@ -1,15 +1,15 @@
 {
-  "gitRepo": "https://github.com/steven-ld/PowerWiki.git",
+  "gitRepo": "https://github.com/nishigepi8/note.git",
   "repoBranch": "master",
   "mdPath": "",
   "port": 3150,
-  "title": "PowerWiki",
-  "description": "基于 Git 仓库的 Markdown 知识库",
-  "siteTitle": "PowerWiki",
-  "siteDescription": "知识库",
+  "title": "GA666666",
+  "description": "Blog",
+  "siteTitle": "GA666666",
+  "siteDescription": "一个分享编程知识的网站",
   "autoSyncInterval": 180000,
   "footer": {
-    "copyright": "© 2024 PowerWiki. All rights reserved.",
+    "copyright": "© 2018 - 2026 GA666666 Blog 黑ICP备2021002511号-1",
     "poweredBy": "Powered by PowerWiki"
   },
   "pages": {
