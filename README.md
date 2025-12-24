@@ -36,7 +36,7 @@ A modern Git-based Markdown wiki system with auto-sync, syntax highlighting, and
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/PowerWiki.git
+git clone https://github.com/steven-ld/PowerWiki.git
 cd PowerWiki
 
 # Install dependencies

@@ -36,7 +36,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/PowerWiki.git
+git clone https://github.com/steven-ld/PowerWiki.git
 cd PowerWiki
 
 # 安装依赖
