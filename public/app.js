@@ -33,12 +33,12 @@ async function loadConfig() {
   try {
     const response = await fetch('/api/config');
     const config = await response.json();
-    
+
     // 更新标题
     if (siteLogo) {
       siteLogo.textContent = config.siteTitle || 'PowerWiki';
     }
-    
+
     // 加载 header 和 footer
     if (siteHeader && config.header) {
       siteHeader.innerHTML = config.header;
@@ -48,26 +48,26 @@ async function loadConfig() {
       // 更新统计数据
       updateFooterStats();
     }
-    
+
     // 加载首页模板
     if (homeView && config.home) {
       homeView.innerHTML = config.home;
-      
+
       // 如果配置了 README 文件，显示其内容
       if (config.homeContent && config.homeContent.html) {
         try {
           const homeContent = document.getElementById('homeContent');
           const homeWelcome = document.getElementById('homeWelcome');
-          
+
           if (homeContent) {
             homeContent.innerHTML = config.homeContent.html;
             homeContent.style.display = 'block';
-            
+
             // 隐藏默认欢迎页面
             if (homeWelcome) {
               homeWelcome.style.display = 'none';
             }
-            
+
             // 为标题添加 ID 并生成目录（如果有标题）
             generateHomeTOC();
           }
@@ -81,7 +81,7 @@ async function loadConfig() {
         }
       }
     }
-    
+
     // 更新页面标题
     document.title = `${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}`;
   } catch (error) {
@@ -103,7 +103,7 @@ function setupEventListeners() {
       goToHome();
     });
   }
-  
+
   // Header 中的标题点击回到首页
   document.addEventListener('click', (e) => {
     const headerTitle = e.target.closest('.site-title');
@@ -345,23 +345,23 @@ function renderPostsTree(tree) {
       e.stopPropagation();
       const dirItem = dirName.closest('.nav-dir');
       const readmePath = dirName.dataset.readmePath;
-      
+
       // 如果有 README，且不是当前已加载的文章，才加载
       if (readmePath && (!currentPost || currentPost.path !== readmePath)) {
         loadPost(readmePath);
         window.history.pushState({ path: readmePath }, '', `/post/${encodeURIComponent(readmePath)}`);
-        
+
         // 高亮当前目录
         postList.querySelectorAll('.nav-item-file').forEach(i => i.classList.remove('active'));
         postList.querySelectorAll('.nav-dir').forEach(d => d.classList.remove('active'));
         dirItem.classList.add('active');
       }
-      
+
       // 同时展开/折叠目录
       toggleDirExpand(dirItem);
     });
   });
-  
+
   // 目录头部整体点击事件（用于没有 README 的目录）
   postList.querySelectorAll('.nav-dir-header').forEach(header => {
     header.addEventListener('click', (e) => {
@@ -408,7 +408,7 @@ function renderTreeNodes(node, prefix = '') {
       const dirPath = prefix ? `${prefix}/${dirName}` : dirName;
       const hasReadme = dirNode.readme ? 'true' : 'false';
       const readmePath = dirNode.readme ? dirNode.readme.path : '';
-      
+
       html += `
         <li class="nav-dir" data-has-readme="${hasReadme}" data-readme-path="${readmePath}">
           <div class="nav-dir-header">
@@ -427,7 +427,7 @@ function renderTreeNodes(node, prefix = '') {
   if (node.files) {
     node.files.forEach(file => {
       const fileType = file.type || (file.path.endsWith('.pdf') ? 'pdf' : 'markdown');
-      const fileIcon = fileType === 'pdf' 
+      const fileIcon = fileType === 'pdf'
         ? `<svg class="nav-file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/><path d="M14 2v6h6M10 12h4M10 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`
         : `<svg class="nav-file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h10M7 12h7M7 16h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
       html += `
@@ -536,15 +536,15 @@ async function loadPost(filePath) {
 
     // 检查文件类型
     const fileType = post.type || (filePath.endsWith('.pdf') ? 'pdf' : 'markdown');
-    
+
     if (fileType === 'pdf') {
       // PDF 文件：渲染成图片，无任何控件
       const pdfUrl = `/api/pdf/${encodeURIComponent(filePath)}`;
       postBody.innerHTML = `<div class="pdf-pages" id="pdfPages"></div>`;
-      
+
       // 加载并渲染 PDF
       renderPdfAsImages(pdfUrl);
-      
+
       // PDF 文件不显示目录
       const tocSidebar = document.getElementById('tocSidebar');
       if (tocSidebar) {
@@ -553,16 +553,16 @@ async function loadPost(filePath) {
     } else {
       // Markdown 文件：正常渲染
       postBody.innerHTML = post.html;
-      
+
       // 为标题添加 ID 并生成目录
       generateTOC();
-      
+
       // 显示目录栏
       const tocSidebar = document.getElementById('tocSidebar');
       if (tocSidebar) {
         tocSidebar.style.display = 'flex';
       }
-      
+
       // 设置目录滚动监听
       setupTOCScroll();
     }
@@ -612,7 +612,7 @@ async function loadPost(filePath) {
     // 更新导航栏活动状态（清除所有选中状态）
     postList.querySelectorAll('.nav-item-file').forEach(i => i.classList.remove('active'));
     postList.querySelectorAll('.nav-dir').forEach(d => d.classList.remove('active'));
-    
+
     // 高亮当前文件
     postList.querySelectorAll('.nav-item-file').forEach(item => {
       if (item.dataset.path === filePath) {
@@ -705,11 +705,11 @@ function generateHomeTOC() {
   const homeContent = document.getElementById('homeContent');
   const tocNav = document.getElementById('tocNav');
   const tocSidebar = document.getElementById('tocSidebar');
-  
+
   if (!homeContent || !tocNav || !tocSidebar) return;
-  
+
   const headings = homeContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
-  
+
   if (headings.length === 0) {
     tocSidebar.style.display = 'none';
     return;
@@ -726,7 +726,7 @@ function generateHomeTOC() {
     const id = `home-heading-${index}`;
     const text = heading.textContent.trim();
     const level = parseInt(heading.tagName.substring(1));
-    
+
     heading.id = id;
     tocItems.push({ id, text, level });
   });
@@ -769,17 +769,17 @@ function generateHomeTOC() {
 function setupHomeTOCScroll() {
   const homeContent = document.getElementById('homeContent');
   if (!homeContent) return;
-  
+
   const headings = homeContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
   if (headings.length === 0) return;
 
   let ticking = false;
-  
+
   const handleScroll = () => {
     if (!ticking) {
       window.requestAnimationFrame(() => {
         let currentHeading = null;
-        
+
         headings.forEach(heading => {
           const rect = heading.getBoundingClientRect();
           if (rect.top <= 100) {
@@ -790,7 +790,7 @@ function setupHomeTOCScroll() {
         if (currentHeading) {
           updateTOCActive(currentHeading.id);
         }
-        
+
         ticking = false;
       });
       ticking = true;
@@ -935,10 +935,10 @@ async function updateFooterStats() {
   try {
     const response = await fetch('/api/stats');
     const stats = await response.json();
-    
+
     const totalViewsEl = document.getElementById('totalViews');
     const totalPostsEl = document.getElementById('totalPosts');
-    
+
     if (totalViewsEl) {
       totalViewsEl.textContent = stats.totalViews || 0;
     }
@@ -970,16 +970,16 @@ async function renderPdfAsImages(pdfUrl) {
     const containerWidth = pagesContainer.clientWidth || 800;
     // 300dpi / 72dpi ≈ 4.17，使用 4x 渲染以获得高清效果
     const dpiScale = 4;
-    
+
     // 渲染每一页
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
       const page = await pdfDoc.getPage(pageNum);
       const viewport = page.getViewport({ scale: 1 });
-      
+
       // 计算显示宽度
       const displayWidth = Math.min(containerWidth - 20, viewport.width * 2);
       const displayScale = displayWidth / viewport.width;
-      
+
       // 高分辨率渲染
       const renderScale = displayScale * dpiScale;
       const renderViewport = page.getViewport({ scale: renderScale });
