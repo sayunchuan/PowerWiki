@@ -8,6 +8,8 @@
 
 A modern Git-based Markdown wiki system with auto-sync, syntax highlighting, and Feishu-style UI.
 
+**🔗 Live Demo: [https://ga666666.cn](https://ga666666.cn)**
+
 [English](README.md) • [中文](README_ZH.md)
 
 </div>
