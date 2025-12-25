@@ -4,6 +4,165 @@ let postsFlat = [];
 let currentPost = null;
 let isMobileMenuOpen = false;
 
+// 客户端缓存管理
+const ClientCache = {
+  // 缓存版本号（当服务器更新时，可以改变版本号来清除所有缓存）
+  CACHE_VERSION: '1.0.0',
+  PREFIX: 'powerwiki_cache_',
+
+  // 默认缓存时间（毫秒）
+  DEFAULT_TTL: {
+    posts: 10 * 60 * 1000,      // 文章列表：10分钟
+    post: 10 * 60 * 1000,        // 单篇文章：10分钟
+    config: 30 * 60 * 1000,      // 配置：30分钟
+    stats: 1 * 60 * 1000         // 统计数据：1分钟
+  },
+
+  /**
+   * 获取缓存键
+   */
+  getKey(type, id = '') {
+    return `${this.PREFIX}${this.CACHE_VERSION}_${type}_${id}`;
+  },
+
+  /**
+   * 获取缓存
+   */
+  get(type, id = '') {
+    try {
+      const key = this.getKey(type, id);
+      const cached = localStorage.getItem(key);
+
+      if (!cached) {
+        return null;
+      }
+
+      const data = JSON.parse(cached);
+
+      // 检查是否过期
+      if (Date.now() > data.expiresAt) {
+        localStorage.removeItem(key);
+        return null;
+      }
+
+      return data.value;
+    } catch (error) {
+      console.warn('读取缓存失败:', error);
+      return null;
+    }
+  },
+
+  /**
+   * 设置缓存
+   */
+  set(type, id = '', value, ttl = null) {
+    try {
+      const key = this.getKey(type, id);
+      const expiresAt = Date.now() + (ttl || this.DEFAULT_TTL[type] || 5 * 60 * 1000);
+
+      const data = {
+        value,
+        expiresAt,
+        createdAt: Date.now()
+      };
+
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      // 如果存储空间不足，清除旧缓存
+      if (error.name === 'QuotaExceededError') {
+        console.warn('存储空间不足，正在清理旧缓存...');
+        this.clearExpired();
+        // 重试一次
+        try {
+          const key = this.getKey(type, id);
+          const expiresAt = Date.now() + (ttl || this.DEFAULT_TTL[type] || 5 * 60 * 1000);
+          localStorage.setItem(key, JSON.stringify({ value, expiresAt, createdAt: Date.now() }));
+        } catch (e) {
+          console.error('缓存设置失败:', e);
+        }
+      } else {
+        console.error('缓存设置失败:', error);
+      }
+    }
+  },
+
+  /**
+   * 删除缓存
+   */
+  delete(type, id = null) {
+    if (id === null) {
+      // 删除该类型的所有缓存
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith(`${this.PREFIX}${this.CACHE_VERSION}_${type}_`)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } else {
+      const key = this.getKey(type, id);
+      localStorage.removeItem(key);
+    }
+  },
+
+  /**
+   * 清除所有缓存
+   */
+  clear() {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(this.PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    });
+  },
+
+  /**
+   * 清除过期缓存
+   */
+  clearExpired() {
+    const keys = Object.keys(localStorage);
+    const now = Date.now();
+    let cleared = 0;
+
+    keys.forEach(key => {
+      if (key.startsWith(this.PREFIX)) {
+        try {
+          const cached = localStorage.getItem(key);
+          if (cached) {
+            const data = JSON.parse(cached);
+            if (now > data.expiresAt) {
+              localStorage.removeItem(key);
+              cleared++;
+            }
+          }
+        } catch (e) {
+          // 如果解析失败，删除该缓存
+          localStorage.removeItem(key);
+          cleared++;
+        }
+      }
+    });
+
+    return cleared;
+  },
+
+  /**
+   * 检查缓存是否存在且未过期
+   */
+  has(type, id = '') {
+    const cached = this.get(type, id);
+    return cached !== null;
+  }
+};
+
+// 定期清理过期缓存（每5分钟）
+setInterval(() => {
+  const cleared = ClientCache.clearExpired();
+  if (cleared > 0) {
+    console.log(`🧹 已清理 ${cleared} 个过期缓存项`);
+  }
+}, 5 * 60 * 1000);
+
 // DOM 元素
 const postList = document.getElementById('postList');
 const searchInput = document.getElementById('searchInput');
@@ -32,66 +191,83 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 加载网站配置和模板
 async function loadConfig() {
   try {
+    // 检查缓存
+    const cached = ClientCache.get('config');
+    if (cached) {
+      const config = cached;
+      applyConfig(config);
+      return;
+    }
+
     const response = await fetch('/api/config');
     const config = await response.json();
 
-    // 更新标题
-    if (siteLogo) {
-      siteLogo.textContent = config.siteTitle || 'PowerWiki';
-    }
+    // 缓存配置
+    ClientCache.set('config', '', config);
 
-    // 加载 header 和 footer
-    if (siteHeader && config.header) {
-      siteHeader.innerHTML = config.header;
-    }
-    if (siteFooter && config.footer) {
-      siteFooter.innerHTML = config.footer;
-      // 更新统计数据
-      updateFooterStats();
-    }
-
-    // 加载首页模板
-    if (homeView && config.home) {
-      homeView.innerHTML = config.home;
-
-      // 如果配置了 README 文件，显示其内容
-      if (config.homeContent && config.homeContent.html) {
-        try {
-          const homeContent = document.getElementById('homeContent');
-          const homeWelcome = document.getElementById('homeWelcome');
-
-          if (homeContent) {
-            homeContent.innerHTML = config.homeContent.html;
-            homeContent.style.display = 'block';
-
-            // 隐藏默认欢迎页面
-            if (homeWelcome) {
-              homeWelcome.style.display = 'none';
-            }
-
-            // 为代码块和图片添加功能
-            addCopyButtonsToCodeBlocks(homeContent);
-            addImageZoomFeature(homeContent);
-
-            // 为标题添加 ID 并生成目录（如果有标题）
-            generateHomeTOC();
-          }
-        } catch (error) {
-          console.error('加载首页内容失败:', error);
-          // 如果出错，显示默认欢迎页面
-          const homeWelcome = document.getElementById('homeWelcome');
-          if (homeWelcome) {
-            homeWelcome.style.display = 'block';
-          }
-        }
-      }
-    }
-
-    // 更新页面标题
-    document.title = `${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}`;
+    applyConfig(config);
   } catch (error) {
     console.error('加载配置失败:', error);
   }
+}
+
+// 应用配置
+function applyConfig(config) {
+
+  // 更新标题
+  if (siteLogo) {
+    siteLogo.textContent = config.siteTitle || 'PowerWiki';
+  }
+
+  // 加载 header 和 footer
+  if (siteHeader && config.header) {
+    siteHeader.innerHTML = config.header;
+  }
+  if (siteFooter && config.footer) {
+    siteFooter.innerHTML = config.footer;
+    // 更新统计数据
+    updateFooterStats();
+  }
+
+  // 加载首页模板
+  if (homeView && config.home) {
+    homeView.innerHTML = config.home;
+
+    // 如果配置了 README 文件，显示其内容
+    if (config.homeContent && config.homeContent.html) {
+      try {
+        const homeContent = document.getElementById('homeContent');
+        const homeWelcome = document.getElementById('homeWelcome');
+
+        if (homeContent) {
+          homeContent.innerHTML = config.homeContent.html;
+          homeContent.style.display = 'block';
+
+          // 隐藏默认欢迎页面
+          if (homeWelcome) {
+            homeWelcome.style.display = 'none';
+          }
+
+          // 为代码块和图片添加功能
+          addCopyButtonsToCodeBlocks(homeContent);
+          addImageZoomFeature(homeContent);
+
+          // 为标题添加 ID 并生成目录（如果有标题）
+          generateHomeTOC();
+        }
+      } catch (error) {
+        console.error('加载首页内容失败:', error);
+        // 如果出错，显示默认欢迎页面
+        const homeWelcome = document.getElementById('homeWelcome');
+        if (homeWelcome) {
+          homeWelcome.style.display = 'block';
+        }
+      }
+    }
+  }
+
+  // 更新页面标题
+  document.title = `${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}`;
 }
 
 // 设置事件监听
@@ -270,6 +446,17 @@ function setupRouting() {
 // 加载文章列表
 async function loadPosts() {
   try {
+    // 检查缓存
+    const cached = ClientCache.get('posts');
+    if (cached) {
+      postsTree = cached.tree || {};
+      postsFlat = cached.flat || [];
+      renderPostsTree(postsTree);
+      // 后台更新数据
+      updatePostsInBackground();
+      return;
+    }
+
     postList.innerHTML = `<li class="nav-item loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
     </li>`;
@@ -277,10 +464,41 @@ async function loadPosts() {
     const data = await response.json();
     postsTree = data.tree || {};
     postsFlat = data.flat || [];
+
+    // 缓存数据
+    ClientCache.set('posts', '', data);
+
     renderPostsTree(postsTree);
   } catch (error) {
     postList.innerHTML = '<li class="nav-item loading">加载失败</li>';
     console.error('加载文章列表失败:', error);
+  }
+}
+
+// 后台更新文章列表（不阻塞UI）
+async function updatePostsInBackground() {
+  try {
+    const response = await fetch('/api/posts');
+    const data = await response.json();
+
+    // 检查数据是否有变化
+    const cached = ClientCache.get('posts');
+    if (cached && JSON.stringify(cached) !== JSON.stringify(data)) {
+      // 数据有更新，更新缓存和UI
+      postsTree = data.tree || {};
+      postsFlat = data.flat || [];
+      ClientCache.set('posts', '', data);
+
+      // 如果当前没有选中文章，更新UI
+      if (!currentPost) {
+        renderPostsTree(postsTree);
+      }
+    } else {
+      // 数据没有变化，只更新缓存时间
+      ClientCache.set('posts', '', data);
+    }
+  } catch (error) {
+    console.warn('后台更新文章列表失败:', error);
   }
 }
 
@@ -512,6 +730,16 @@ async function loadPost(filePath) {
     postView.classList.remove('active');
     homeView.classList.remove('active');
 
+    // 检查缓存
+    const cached = ClientCache.get('post', filePath);
+    if (cached) {
+      currentPost = cached;
+      renderPost(cached);
+      // 后台更新文章（访问量可能变化）
+      updatePostInBackground(filePath);
+      return;
+    }
+
     const response = await fetch(`/api/post/${encodeURIComponent(filePath)}`);
     if (!response.ok) {
       throw new Error('文章不存在');
@@ -520,132 +748,169 @@ async function loadPost(filePath) {
     const post = await response.json();
     currentPost = post;
 
-    // 渲染文章
-    postTitle.textContent = post.title;
+    // 缓存文章
+    ClientCache.set('post', filePath, post);
 
-    // 显示查看量
-    const viewCount = post.viewCount || 0;
-    const postViewCount = document.getElementById('postViewCount');
-    if (postViewCount) {
-      // 追加文字到现有的 SVG 图标后
-      const existingText = postViewCount.querySelector('span.view-text');
-      if (existingText) {
-        existingText.textContent = viewCount;
-      } else {
-        const textSpan = document.createElement('span');
-        textSpan.className = 'view-text';
-        textSpan.textContent = viewCount;
-        postViewCount.appendChild(textSpan);
-      }
-    }
-
-    // 检查文件类型
-    const fileType = post.type || (filePath.endsWith('.pdf') ? 'pdf' : 'markdown');
-
-    if (fileType === 'pdf') {
-      // PDF 文件：渲染成图片，无任何控件
-      const pdfUrl = `/api/pdf/${encodeURIComponent(filePath)}`;
-      postBody.innerHTML = `<div class="pdf-pages" id="pdfPages"></div>`;
-
-      // 加载并渲染 PDF
-      renderPdfAsImages(pdfUrl);
-
-      // PDF 文件不显示目录
-      const tocSidebar = document.getElementById('tocSidebar');
-      if (tocSidebar) {
-        tocSidebar.style.display = 'none';
-      }
-    } else {
-      // Markdown 文件：正常渲染
-      postBody.innerHTML = post.html;
-
-      // 为代码块添加复制按钮
-      addCopyButtonsToCodeBlocks();
-
-      // 为图片添加点击放大功能
-      addImageZoomFeature();
-
-      // 为标题添加 ID 并生成目录
-      generateTOC();
-
-      // 显示目录栏
-      const tocSidebar = document.getElementById('tocSidebar');
-      if (tocSidebar) {
-        tocSidebar.style.display = 'flex';
-      }
-
-      // 设置目录滚动监听
-      setupTOCScroll();
-    }
-
-    // 格式化日期
-    const date = new Date(post.fileInfo.modified);
-    const dateText = date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    // 追加文字到现有的 SVG 图标后
-    const existingDateText = postDate.querySelector('span.date-text');
-    if (existingDateText) {
-      existingDateText.textContent = dateText;
-    } else {
-      const dateSpan = document.createElement('span');
-      dateSpan.className = 'date-text';
-      dateSpan.textContent = dateText;
-      postDate.appendChild(dateSpan);
-    }
-
-    // 格式化文件大小
-    const sizeKB = (post.fileInfo.size / 1024).toFixed(2);
-    const sizeMB = (post.fileInfo.size / (1024 * 1024)).toFixed(2);
-    const sizeText = post.fileInfo.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
-    const existingSizeText = postSize.querySelector('span.size-text');
-    if (existingSizeText) {
-      existingSizeText.textContent = sizeText;
-    } else {
-      const sizeSpan = document.createElement('span');
-      sizeSpan.className = 'size-text';
-      sizeSpan.textContent = sizeText;
-      postSize.appendChild(sizeSpan);
-    }
-
-    // 显示文章视图
-    postView.classList.add('active');
-    homeView.classList.remove('active');
-
-    // 更新footer统计信息
-    updateFooterStats();
-
-    // 滚动到顶部
-    window.scrollTo(0, 0);
-
-    // 更新导航栏活动状态（清除所有选中状态）
-    postList.querySelectorAll('.nav-item-file').forEach(i => i.classList.remove('active'));
-    postList.querySelectorAll('.nav-dir').forEach(d => d.classList.remove('active'));
-
-    // 高亮当前文件
-    postList.querySelectorAll('.nav-item-file').forEach(item => {
-      if (item.dataset.path === filePath) {
-        item.classList.add('active');
-        // 展开所有父目录
-        let parent = item.parentElement;
-        while (parent && parent !== postList) {
-          if (parent.classList.contains('nav-dir')) {
-            parent.classList.add('expanded');
-            const children = parent.querySelector('.nav-dir-children');
-            if (children) {
-              children.style.display = 'block';
-            }
-          }
-          parent = parent.parentElement;
-        }
-      }
-    });
-
+    renderPost(post);
   } catch (error) {
     console.error('加载文章失败:', error);
     showNotification('加载文章失败: ' + error.message, 'error');
+  }
+}
+
+// 渲染文章
+function renderPost(post) {
+
+  // 渲染文章
+  postTitle.textContent = post.title;
+
+  // 显示查看量
+  const viewCount = post.viewCount || 0;
+  const postViewCount = document.getElementById('postViewCount');
+  if (postViewCount) {
+    // 追加文字到现有的 SVG 图标后
+    const existingText = postViewCount.querySelector('span.view-text');
+    if (existingText) {
+      existingText.textContent = viewCount;
+    } else {
+      const textSpan = document.createElement('span');
+      textSpan.className = 'view-text';
+      textSpan.textContent = viewCount;
+      postViewCount.appendChild(textSpan);
+    }
+  }
+
+  // 检查文件类型
+  const filePath = post.path;
+  const fileType = post.type || (filePath.endsWith('.pdf') ? 'pdf' : 'markdown');
+
+  if (fileType === 'pdf') {
+    // PDF 文件：渲染成图片，无任何控件
+    const pdfUrl = `/api/pdf/${encodeURIComponent(filePath)}`;
+    postBody.innerHTML = `<div class="pdf-pages" id="pdfPages"></div>`;
+
+    // 加载并渲染 PDF
+    renderPdfAsImages(pdfUrl);
+
+    // PDF 文件不显示目录
+    const tocSidebar = document.getElementById('tocSidebar');
+    if (tocSidebar) {
+      tocSidebar.style.display = 'none';
+    }
+  } else {
+    // Markdown 文件：正常渲染
+    postBody.innerHTML = post.html;
+
+    // 为代码块添加复制按钮
+    addCopyButtonsToCodeBlocks();
+
+    // 为图片添加点击放大功能
+    addImageZoomFeature();
+
+    // 为标题添加 ID 并生成目录
+    generateTOC();
+
+    // 显示目录栏
+    const tocSidebar = document.getElementById('tocSidebar');
+    if (tocSidebar) {
+      tocSidebar.style.display = 'flex';
+    }
+
+    // 设置目录滚动监听
+    setupTOCScroll();
+  }
+
+  // 格式化日期
+  const date = new Date(post.fileInfo.modified);
+  const dateText = date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  // 追加文字到现有的 SVG 图标后
+  const existingDateText = postDate.querySelector('span.date-text');
+  if (existingDateText) {
+    existingDateText.textContent = dateText;
+  } else {
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'date-text';
+    dateSpan.textContent = dateText;
+    postDate.appendChild(dateSpan);
+  }
+
+  // 格式化文件大小
+  const sizeKB = (post.fileInfo.size / 1024).toFixed(2);
+  const sizeMB = (post.fileInfo.size / (1024 * 1024)).toFixed(2);
+  const sizeText = post.fileInfo.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+  const existingSizeText = postSize.querySelector('span.size-text');
+  if (existingSizeText) {
+    existingSizeText.textContent = sizeText;
+  } else {
+    const sizeSpan = document.createElement('span');
+    sizeSpan.className = 'size-text';
+    sizeSpan.textContent = sizeText;
+    postSize.appendChild(sizeSpan);
+  }
+
+  // 显示文章视图
+  postView.classList.add('active');
+  homeView.classList.remove('active');
+
+  // 更新footer统计信息
+  updateFooterStats();
+
+  // 滚动到顶部
+  window.scrollTo(0, 0);
+
+  // 更新导航栏活动状态（清除所有选中状态）
+  postList.querySelectorAll('.nav-item-file').forEach(i => i.classList.remove('active'));
+  postList.querySelectorAll('.nav-dir').forEach(d => d.classList.remove('active'));
+
+  // 高亮当前文件
+  const currentFilePath = post.path;
+  postList.querySelectorAll('.nav-item-file').forEach(item => {
+    if (item.dataset.path === currentFilePath) {
+      item.classList.add('active');
+      // 展开所有父目录
+      let parent = item.parentElement;
+      while (parent && parent !== postList) {
+        if (parent.classList.contains('nav-dir')) {
+          parent.classList.add('expanded');
+          const children = parent.querySelector('.nav-dir-children');
+          if (children) {
+            children.style.display = 'block';
+          }
+        }
+        parent = parent.parentElement;
+      }
+    }
+  });
+}
+
+// 后台更新文章（用于更新访问量等可能变化的数据）
+async function updatePostInBackground(filePath) {
+  try {
+    const response = await fetch(`/api/post/${encodeURIComponent(filePath)}`);
+    if (response.ok) {
+      const post = await response.json();
+
+      // 只更新访问量，不重新渲染整个页面
+      if (post.viewCount !== undefined && currentPost && currentPost.path === filePath) {
+        currentPost.viewCount = post.viewCount;
+        const postViewCount = document.getElementById('postViewCount');
+        if (postViewCount) {
+          const existingText = postViewCount.querySelector('span.view-text');
+          if (existingText) {
+            existingText.textContent = post.viewCount;
+          }
+        }
+      }
+
+      // 更新缓存
+      ClientCache.set('post', filePath, post);
+    }
+  } catch (error) {
+    console.warn('后台更新文章失败:', error);
   }
 }
 
@@ -944,20 +1209,49 @@ function setupTOCScroll() {
 // 更新footer统计信息
 async function updateFooterStats() {
   try {
+    // 统计数据缓存时间很短，但也可以使用缓存来减少请求
+    const cached = ClientCache.get('stats');
+    if (cached) {
+      updateStatsUI(cached);
+      // 后台更新统计数据
+      updateStatsInBackground();
+      return;
+    }
+
     const response = await fetch('/api/stats');
     const stats = await response.json();
 
-    const totalViewsEl = document.getElementById('totalViews');
-    const totalPostsEl = document.getElementById('totalPosts');
+    // 缓存统计数据
+    ClientCache.set('stats', '', stats);
 
-    if (totalViewsEl) {
-      totalViewsEl.textContent = stats.totalViews || 0;
-    }
-    if (totalPostsEl) {
-      totalPostsEl.textContent = stats.postViews ? Object.keys(stats.postViews).length : 0;
-    }
+    updateStatsUI(stats);
   } catch (error) {
     console.error('更新统计信息失败:', error);
+  }
+}
+
+// 更新统计信息UI
+function updateStatsUI(stats) {
+  const totalViewsEl = document.getElementById('totalViews');
+  const totalPostsEl = document.getElementById('totalPosts');
+
+  if (totalViewsEl) {
+    totalViewsEl.textContent = stats.totalViews || 0;
+  }
+  if (totalPostsEl) {
+    totalPostsEl.textContent = stats.postViews ? Object.keys(stats.postViews).length : 0;
+  }
+}
+
+// 后台更新统计数据
+async function updateStatsInBackground() {
+  try {
+    const response = await fetch('/api/stats');
+    const stats = await response.json();
+    ClientCache.set('stats', '', stats);
+    updateStatsUI(stats);
+  } catch (error) {
+    console.warn('后台更新统计数据失败:', error);
   }
 }
 

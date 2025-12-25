@@ -13,6 +13,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const GitManager = require('./utils/gitManager');
 const { parseMarkdown } = require('./utils/markdownParser');
+const cacheManager = require('./utils/cacheManager');
 
 const app = express();
 
@@ -137,6 +138,10 @@ async function initRepo() {
     const result = await gitManager.cloneOrUpdate();
     if (result.updated) {
       console.log('✅ 仓库已更新！');
+      // 清除相关缓存
+      cacheManager.delete('posts');
+      cacheManager.delete('config');
+      console.log('🗑️  已清除相关缓存');
     } else {
       console.log('✅ 仓库已是最新版本');
     }
@@ -157,6 +162,10 @@ function startAutoSync() {
       const result = await gitManager.cloneOrUpdate();
       if (result.updated) {
         console.log('⏰ [' + new Date().toLocaleString() + '] 仓库有更新，已自动同步');
+        // 清除相关缓存
+        cacheManager.delete('posts');
+        cacheManager.delete('config');
+        console.log('🗑️  已清除相关缓存');
       }
       // 没有更新时不打印日志
     } catch (error) {
@@ -301,9 +310,21 @@ function buildDirectoryTree(files) {
 // API: 获取所有文章列表（返回目录树结构）
 app.get('/api/posts', async (req, res) => {
   try {
+    // 检查缓存
+    const cached = cacheManager.get('posts');
+    if (cached) {
+      res.json(cached);
+      return;
+    }
+
     const files = await gitManager.getAllMarkdownFiles(config.mdPath);
     const tree = buildDirectoryTree(files);
-    res.json({ tree, flat: files }); // 同时返回树结构和扁平列表（用于搜索）
+    const result = { tree, flat: files };
+    
+    // 缓存结果（文章列表缓存10分钟）
+    cacheManager.set('posts', '', result, 10 * 60 * 1000);
+    
+    res.json(result);
   } catch (error) {
     console.error('获取文章列表失败:', error);
     res.status(500).json({ error: error.message });
@@ -323,6 +344,16 @@ app.get('/api/post/*', async (req, res) => {
       console.warn('路径解码失败，使用原始路径:', filePath);
     }
     
+    // 检查缓存
+    const cached = cacheManager.get('post', filePath);
+    if (cached) {
+      // 更新访问量（缓存命中时也要记录）
+      const viewCount = recordPostView(filePath);
+      cached.viewCount = viewCount;
+      res.json(cached);
+      return;
+    }
+    
     // 记录访问量
     const viewCount = recordPostView(filePath);
     
@@ -331,7 +362,7 @@ app.get('/api/post/*', async (req, res) => {
       const fileInfo = await gitManager.getFileInfo(filePath);
       const fileName = fileInfo.name.replace(/\.pdf$/i, '');
       
-      res.json({
+      const result = {
         type: 'pdf',
         title: fileName,
         fileInfo,
@@ -339,7 +370,12 @@ app.get('/api/post/*', async (req, res) => {
         html: '', // PDF 不需要 HTML
         description: 'PDF 文档',
         viewCount
-      });
+      };
+      
+      // 缓存结果（PDF 文件缓存15分钟）
+      cacheManager.set('post', filePath, result, 15 * 60 * 1000);
+      
+      res.json(result);
     } else {
       // Markdown 文件处理
       const content = await gitManager.readMarkdownFile(filePath);
@@ -350,14 +386,19 @@ app.get('/api/post/*', async (req, res) => {
       const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
       const title = fileName || parsed.title;
 
-      res.json({
+      const result = {
         ...parsed,
         type: 'markdown',
         title, // 使用文件名作为标题
         fileInfo,
         path: filePath,
         viewCount
-      });
+      };
+      
+      // 缓存结果（Markdown 文件缓存10分钟）
+      cacheManager.set('post', filePath, result, 10 * 60 * 1000);
+      
+      res.json(result);
     }
   } catch (error) {
     console.error('获取文章失败:', error);
@@ -367,6 +408,13 @@ app.get('/api/post/*', async (req, res) => {
 
 // API: 获取网站配置
 app.get('/api/config', async (req, res) => {
+  // 检查缓存
+  const cached = cacheManager.get('config');
+  if (cached) {
+    res.json(cached);
+    return;
+  }
+
   const headerTemplate = readTemplate('header');
   const footerTemplate = readTemplate('footer');
   const homeTemplate = readTemplate('home');
@@ -422,7 +470,7 @@ app.get('/api/config', async (req, res) => {
     siteDescription: config.siteDescription || config.description
   };
 
-  res.json({
+  const result = {
     header: renderTemplate(headerTemplate, headerData),
     footer: renderTemplate(footerTemplate, footerData),
     home: renderTemplate(homeTemplate, homeData),
@@ -433,13 +481,47 @@ app.get('/api/config', async (req, res) => {
       home: homePagePath,
       about: aboutPagePath
     }
-  });
+  };
+
+  // 缓存结果（配置缓存30分钟）
+  cacheManager.set('config', '', result, 30 * 60 * 1000);
+
+  res.json(result);
 });
 
 // API: 获取统计数据
 app.get('/api/stats', (req, res) => {
+  // 统计数据缓存时间较短（1分钟），因为访问量会频繁变化
+  const cached = cacheManager.get('stats');
+  if (cached) {
+    res.json(cached);
+    return;
+  }
+
   const stats = readStats();
+  
+  // 缓存1分钟
+  cacheManager.set('stats', '', stats, 60 * 1000);
+  
   res.json(stats);
+});
+
+// API: 获取缓存统计信息（调试用）
+app.get('/api/cache/stats', (req, res) => {
+  res.json(cacheManager.getStats());
+});
+
+// API: 清除缓存（管理员用）
+app.post('/api/cache/clear', (req, res) => {
+  const { type, key } = req.body;
+  
+  if (type) {
+    cacheManager.delete(type, key);
+    res.json({ success: true, message: `已清除缓存: ${type}${key ? `/${key}` : ''}` });
+  } else {
+    cacheManager.clear();
+    res.json({ success: true, message: '已清除所有缓存' });
+  }
 });
 
 // 首页
@@ -448,6 +530,7 @@ app.get('/', (req, res) => {
 });
 
 // API: 获取 PDF 文件（直接返回文件流）
+// 注意：PDF 文件不缓存，因为文件可能较大
 app.get('/api/pdf/*', async (req, res) => {
   try {
     let filePath = req.params[0];
@@ -461,6 +544,7 @@ app.get('/api/pdf/*', async (req, res) => {
       return res.status(400).json({ error: '不是 PDF 文件' });
     }
     
+    // 直接读取文件，不缓存
     const pdfBuffer = await gitManager.readPdfFile(filePath);
     const fileName = path.basename(filePath);
     
