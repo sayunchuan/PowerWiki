@@ -10,6 +10,7 @@
 const simpleGit = require('simple-git');
 const fs = require('fs-extra');
 const path = require('path');
+const { spawn } = require('child_process');
 
 /**
  * Git 仓库管理器
@@ -21,6 +22,8 @@ class GitManager {
     this.localPath = localPath;
     this.repoName = this.extractRepoName(repoUrl);
     this.repoPath = path.join(localPath, this.repoName);
+    this.isOperating = false; // 操作状态标志
+    this.progressCallback = null; // 进度回调函数
   }
 
   extractRepoName(url) {
@@ -28,37 +31,182 @@ class GitManager {
     return match ? match[1] : 'repo';
   }
 
+  /**
+   * 设置进度回调函数
+   * @param {Function} callback - 进度回调函数，接收 (message, progress) 参数
+   */
+  setProgressCallback(callback) {
+    this.progressCallback = callback;
+  }
+
+  /**
+   * 显示进度信息
+   * @param {string} message - 进度消息
+   * @param {number} progress - 进度百分比 (0-100)
+   */
+  showProgress(message, progress = null) {
+    if (this.progressCallback) {
+      this.progressCallback(message, progress);
+    } else {
+      // 默认输出
+      if (progress !== null) {
+        console.log(`\r${message} ${progress}%`);
+      } else {
+        console.log(message);
+      }
+    }
+  }
+
+  /**
+   * 解析 Git 进度输出
+   * @param {string} output - Git 输出
+   * @returns {Object|null} 包含进度信息的对象
+   */
+  parseProgress(output) {
+    if (!output) return null;
+    
+    // 解析 clone 进度: "Receiving objects: 45% (1234/5678), 1.23 MiB | 1.45 MiB/s"
+    const receivingMatch = output.match(/Receiving objects:\s*(\d+)%/);
+    if (receivingMatch) {
+      return { type: 'receiving', progress: parseInt(receivingMatch[1]) };
+    }
+    
+    // 解析 clone 进度: "Resolving deltas: 30% (123/456)"
+    const resolvingMatch = output.match(/Resolving deltas:\s*(\d+)%/);
+    if (resolvingMatch) {
+      return { type: 'resolving', progress: parseInt(resolvingMatch[1]) };
+    }
+    
+    // 解析 pull 进度: "Updating 1234..5678"
+    if (output.includes('Updating')) {
+      return { type: 'updating', progress: null };
+    }
+    
+    return null;
+  }
+
   async cloneOrUpdate() {
+    // 如果正在操作，直接返回
+    if (this.isOperating) {
+      throw new Error('Git 操作正在进行中，请稍候...');
+    }
+    
+    this.isOperating = true;
     try {
       await fs.ensureDir(this.localPath);
       
       if (await fs.pathExists(this.repoPath)) {
-        // 如果已存在，执行 pull 更新
+        // 检查仓库是否完整（是否有 HEAD）
         const git = simpleGit(this.repoPath);
+        let isComplete = false;
+        try {
+          await git.revparse(['HEAD']);
+          isComplete = true;
+        } catch (error) {
+          // HEAD 不存在，说明仓库不完整，需要重新克隆
+          this.showProgress('⚠️  检测到不完整的仓库，正在清理并重新克隆...');
+          await fs.remove(this.repoPath);
+          isComplete = false;
+        }
         
-        // 获取更新前的最新提交
-        const beforePull = await git.revparse(['HEAD']);
-        
-        // 执行 pull
-        await git.pull('origin', this.branch);
-        
-        // 获取更新后的最新提交
-        const afterPull = await git.revparse(['HEAD']);
-        
-        // 检查是否有更新
-        const updated = beforePull !== afterPull;
-        
-        return { updated, isNew: false };
-      } else {
-        // 如果不存在，执行 clone
-        const git = simpleGit(this.localPath);
-        await git.clone(this.repoUrl, this.repoName, ['--branch', this.branch]);
-        console.log(`已克隆仓库: ${this.repoName}`);
-        return { updated: true, isNew: true };
+        if (isComplete) {
+          // 如果已存在且完整，执行 pull 更新
+          this.showProgress('🔄 正在拉取更新...');
+          
+          // 获取更新前的最新提交
+          let beforePull = null;
+          try {
+            beforePull = await git.revparse(['HEAD']);
+          } catch (error) {
+            // 如果获取失败，说明仓库可能有问题，但继续尝试 pull
+            console.warn('⚠️  无法获取当前提交，继续尝试拉取...');
+          }
+          
+          // 执行 pull
+          await git.pull('origin', this.branch);
+          
+          // 获取更新后的最新提交
+          let afterPull = null;
+          try {
+            afterPull = await git.revparse(['HEAD']);
+          } catch (error) {
+            console.warn('⚠️  无法获取更新后的提交');
+          }
+          
+          // 检查是否有更新
+          const updated = beforePull && afterPull ? beforePull !== afterPull : true;
+          
+          this.showProgress('✅ 拉取完成');
+          return { updated, isNew: false };
+        }
       }
+      
+      // 如果不存在或不完整，执行 clone
+      this.showProgress('📦 正在克隆仓库...');
+      
+      // 使用 spawn 执行 git clone 以捕获进度输出
+      const result = await new Promise((resolve, reject) => {
+        let lastProgress = 0;
+        let progressType = '接收对象';
+        
+        const gitProcess = spawn('git', [
+          'clone',
+          '--branch', this.branch,
+          '--progress',
+          this.repoUrl,
+          this.repoName
+        ], {
+          cwd: this.localPath,
+          stdio: ['ignore', 'pipe', 'pipe']
+        });
+        
+        // 处理标准输出（通常为空）
+        gitProcess.stdout.on('data', (data) => {
+          const output = data.toString();
+          const progress = this.parseProgress(output);
+          if (progress && progress.progress !== null) {
+            if (progress.progress !== lastProgress) {
+              lastProgress = progress.progress;
+              progressType = progress.type === 'receiving' ? '接收对象' : '解析增量';
+              this.showProgress(`📥 ${progressType}:`, progress.progress);
+            }
+          }
+        });
+        
+        // 处理标准错误（Git 的进度信息通常在这里）
+        gitProcess.stderr.on('data', (data) => {
+          const output = data.toString();
+          // Git 的进度信息通常输出到 stderr
+          const progress = this.parseProgress(output);
+          if (progress && progress.progress !== null) {
+            if (progress.progress !== lastProgress) {
+              lastProgress = progress.progress;
+              progressType = progress.type === 'receiving' ? '接收对象' : '解析增量';
+              this.showProgress(`📥 ${progressType}:`, progress.progress);
+            }
+          }
+        });
+        
+        gitProcess.on('close', (code) => {
+          if (code === 0) {
+            this.showProgress(`✅ 已克隆仓库: ${this.repoName}`);
+            resolve({ updated: true, isNew: true });
+          } else {
+            reject(new Error(`Git clone 失败，退出码: ${code}`));
+          }
+        });
+        
+        gitProcess.on('error', (error) => {
+          reject(new Error(`Git clone 执行失败: ${error.message}`));
+        });
+      });
+      
+      return result;
     } catch (error) {
       console.error('Git 操作失败:', error);
       throw error;
+    } finally {
+      this.isOperating = false;
     }
   }
 

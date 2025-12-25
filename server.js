@@ -93,6 +93,32 @@ const gitManager = new GitManager(config.gitRepo, config.repoBranch, './.git-rep
 let repoInitialized = false;
 let repoInitializing = false;
 
+/**
+ * 显示进度条
+ * @param {string} message - 消息
+ * @param {number} progress - 进度百分比 (0-100)
+ */
+function showProgress(message, progress = null) {
+  if (progress !== null) {
+    // 创建进度条
+    const barLength = 30;
+    const filled = Math.round((progress / 100) * barLength);
+    const empty = barLength - filled;
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
+    // 使用 \r 覆盖当前行，\x1b[K 清除到行尾
+    process.stdout.write(`\r\x1b[K${message} [${bar}] ${progress}%`);
+    if (progress === 100) {
+      process.stdout.write('\n');
+    }
+  } else {
+    // 如果有进度条在显示，先换行
+    if (process.stdout.cursorTo) {
+      process.stdout.write('\n');
+    }
+    console.log(message);
+  }
+}
+
 // 中间件
 app.use(express.json());
 app.use(express.static('public'));
@@ -143,6 +169,9 @@ async function initRepo() {
   
   repoInitializing = true;
   try {
+    // 设置进度回调
+    gitManager.setProgressCallback(showProgress);
+    
     console.log('📦 正在同步 Git 仓库...');
     const result = await gitManager.cloneOrUpdate();
     if (result.updated) {
@@ -173,7 +202,22 @@ async function initRepo() {
 function startAutoSync() {
   const interval = config.autoSyncInterval || 180000; // 默认3分钟
   setInterval(async () => {
+    // 检查是否正在操作（包括初始化和自动同步）
+    if (repoInitializing || gitManager.isOperating) {
+      console.log('⏸️  跳过本次同步：Git 操作正在进行中...');
+      return;
+    }
+    
+    // 检查仓库是否已初始化
+    if (!repoInitialized) {
+      console.log('⏸️  跳过本次同步：仓库尚未初始化完成...');
+      return;
+    }
+    
     try {
+      // 设置进度回调
+      gitManager.setProgressCallback(showProgress);
+      
       const result = await gitManager.cloneOrUpdate();
       if (result.updated) {
         console.log('⏰ [' + new Date().toLocaleString() + '] 仓库有更新，已自动同步');
@@ -184,6 +228,10 @@ function startAutoSync() {
       }
       // 没有更新时不打印日志
     } catch (error) {
+      // 如果是操作进行中的错误，不打印错误日志
+      if (error.message && error.message.includes('正在进行中')) {
+        return;
+      }
       console.error('❌ 自动同步失败:', error.message);
     }
   }, interval);
