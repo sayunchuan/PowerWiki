@@ -307,6 +307,58 @@ function buildDirectoryTree(files) {
   return tree;
 }
 
+// API: 生成 sitemap.xml
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    // 检查缓存
+    const cached = cacheManager.get('sitemap');
+    if (cached) {
+      res.setHeader('Content-Type', 'application/xml');
+      res.send(cached);
+      return;
+    }
+
+    const files = await gitManager.getAllMarkdownFiles(config.mdPath);
+    const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
+    
+    let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    
+    // 添加首页
+    sitemap += '  <url>\n';
+    sitemap += `    <loc>${baseUrl}/</loc>\n`;
+    sitemap += '    <changefreq>daily</changefreq>\n';
+    sitemap += '    <priority>1.0</priority>\n';
+    sitemap += '  </url>\n';
+    
+    // 添加所有文章
+    files.forEach(file => {
+      if (!file.path.endsWith('.pdf')) { // PDF 文件不加入 sitemap
+        const url = `${baseUrl}/post/${encodeURIComponent(file.path)}`;
+        const lastmod = new Date(file.modified).toISOString().split('T')[0];
+        
+        sitemap += '  <url>\n';
+        sitemap += `    <loc>${url}</loc>\n`;
+        sitemap += `    <lastmod>${lastmod}</lastmod>\n`;
+        sitemap += '    <changefreq>weekly</changefreq>\n';
+        sitemap += '    <priority>0.8</priority>\n';
+        sitemap += '  </url>\n';
+      }
+    });
+    
+    sitemap += '</urlset>';
+    
+    // 缓存 sitemap（1小时）
+    cacheManager.set('sitemap', '', sitemap, 60 * 60 * 1000);
+    
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(sitemap);
+  } catch (error) {
+    console.error('生成 sitemap 失败:', error);
+    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>生成 sitemap 失败</error>');
+  }
+});
+
 // API: 获取所有文章列表（返回目录树结构）
 app.get('/api/posts', async (req, res) => {
   try {
@@ -524,8 +576,102 @@ app.post('/api/cache/clear', (req, res) => {
   }
 });
 
-// 首页
-app.get('/', (req, res) => {
+// robots.txt
+app.get('/robots.txt', (req, res) => {
+  const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
+  const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /pdfjs/
+
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(robotsTxt);
+});
+
+// 首页 - 支持服务端渲染（SSR）用于 SEO
+app.get('/', async (req, res) => {
+  // 检查是否是搜索引擎爬虫
+  const userAgent = req.get('user-agent') || '';
+  const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver/i.test(userAgent);
+  
+  if (isBot) {
+    // 为搜索引擎提供预渲染的 HTML
+    try {
+      const headerTemplate = readTemplate('header');
+      const footerTemplate = readTemplate('footer');
+      const homeTemplate = readTemplate('home');
+      
+      const stats = readStats();
+      const homePagePath = config.pages.home || '';
+      
+      let homeContent = null;
+      if (homePagePath) {
+        try {
+          const content = await gitManager.readMarkdownFile(homePagePath);
+          const parsed = parseMarkdown(content);
+          homeContent = {
+            html: parsed.html,
+            title: parsed.title || '首页',
+            path: homePagePath
+          };
+        } catch (error) {
+          // 静默失败
+        }
+      }
+      
+      const headerData = {
+        siteTitle: config.siteTitle || config.title,
+        siteDescription: config.siteDescription || config.description,
+        aboutPath: config.pages.about ? `/post/${encodeURIComponent(config.pages.about)}` : '/post/README.md'
+      };
+      
+      const footerData = {
+        currentYear: new Date().getFullYear(),
+        siteTitle: config.siteTitle || config.title,
+        totalViews: stats.totalViews || 0,
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+      };
+      
+      const homeData = {
+        siteTitle: config.siteTitle || config.title,
+        siteDescription: config.siteDescription || config.description
+      };
+      
+      const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}</title>
+    <meta name="description" content="${config.siteDescription || 'PowerWiki - 一个现代化的知识库系统'}">
+    <meta name="keywords" content="知识库,文档,Markdown,Wiki">
+    <link rel="canonical" href="${config.siteUrl || `${req.protocol}://${req.get('host')}`}">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="siteHeader">${renderTemplate(headerTemplate, headerData)}</div>
+        <main class="main-content">
+            <div id="homeView" class="view active">
+                ${renderTemplate(homeTemplate, homeData)}
+                ${homeContent ? `<div id="homeContent">${homeContent.html}</div>` : ''}
+            </div>
+        </main>
+        <div id="siteFooter">${renderTemplate(footerTemplate, footerData)}</div>
+    </div>
+</body>
+</html>`;
+      
+      res.send(html);
+      return;
+    } catch (error) {
+      console.error('SSR 渲染失败，回退到普通模式:', error);
+    }
+  }
+  
+  // 普通用户或 SSR 失败时，返回普通 HTML
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -558,8 +704,141 @@ app.get('/api/pdf/*', async (req, res) => {
   }
 });
 
-// 文章详情页
-app.get('/post/*', (req, res) => {
+// 文章详情页 - 支持服务端渲染（SSR）用于 SEO
+app.get('/post/*', async (req, res) => {
+  // 检查是否是搜索引擎爬虫
+  const userAgent = req.get('user-agent') || '';
+  const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver/i.test(userAgent);
+  
+  if (isBot) {
+    // 为搜索引擎提供预渲染的 HTML
+    try {
+      let filePath = req.params[0];
+      try {
+        filePath = decodeURIComponent(filePath);
+      } catch (e) {
+        // 解码失败，使用原始路径
+      }
+      
+      // 检查是否为 PDF 文件
+      if (filePath.endsWith('.pdf')) {
+        // PDF 文件不进行 SSR
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        return;
+      }
+      
+      // 读取文章内容
+      const content = await gitManager.readMarkdownFile(filePath);
+      const parsed = parseMarkdown(content);
+      const fileInfo = await gitManager.getFileInfo(filePath);
+      const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
+      const title = fileName || parsed.title || '文章';
+      
+      const headerTemplate = readTemplate('header');
+      const footerTemplate = readTemplate('footer');
+      const stats = readStats();
+      
+      const headerData = {
+        siteTitle: config.siteTitle || config.title,
+        siteDescription: config.siteDescription || config.description,
+        aboutPath: config.pages.about ? `/post/${encodeURIComponent(config.pages.about)}` : '/post/README.md'
+      };
+      
+      const footerData = {
+        currentYear: new Date().getFullYear(),
+        siteTitle: config.siteTitle || config.title,
+        totalViews: stats.totalViews || 0,
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+      };
+      
+      const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
+      const articleUrl = `${baseUrl}/post/${encodeURIComponent(filePath)}`;
+      const articleTitle = `${title} - ${config.siteTitle || 'PowerWiki'}`;
+      const articleDescription = parsed.description || title || 'PowerWiki 文章';
+      
+      // 提取第一张图片
+      let articleImage = '';
+      if (parsed.html) {
+        const imgMatch = parsed.html.match(/<img[^>]+src="([^"]+)"/i);
+        if (imgMatch && imgMatch[1]) {
+          articleImage = imgMatch[1].startsWith('http') ? imgMatch[1] : `${baseUrl}${imgMatch[1]}`;
+        }
+      }
+      
+      const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${articleTitle}</title>
+    <meta name="description" content="${articleDescription}">
+    <meta name="keywords" content="${title},知识库,文档">
+    <link rel="canonical" href="${articleUrl}">
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="${articleUrl}">
+    <meta property="og:title" content="${articleTitle}">
+    <meta property="og:description" content="${articleDescription}">
+    ${articleImage ? `<meta property="og:image" content="${articleImage}">` : ''}
+    <meta property="og:site_name" content="${config.siteTitle || 'PowerWiki'}">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "${title}",
+      "description": "${articleDescription}",
+      "url": "${articleUrl}",
+      "datePublished": "${new Date(fileInfo.modified).toISOString()}",
+      "dateModified": "${new Date(fileInfo.modified).toISOString()}",
+      "author": {
+        "@type": "Organization",
+        "name": "${config.siteTitle || 'PowerWiki'}"
+      }${articleImage ? `,
+      "image": "${articleImage}"` : ''}
+    }
+    </script>
+    
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="siteHeader">${renderTemplate(headerTemplate, headerData)}</div>
+        <main class="main-content">
+            <div id="postView" class="view active">
+                <article class="post-content">
+                    <header class="post-header">
+                        <h1>${title}</h1>
+                        <div class="post-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                    <rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/>
+                                    <path d="M1 5h12M4 1v2M10 1v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                                </svg>
+                                <span class="date-text">${new Date(fileInfo.modified).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </span>
+                        </div>
+                    </header>
+                    <div class="markdown-body">${parsed.html}</div>
+                </article>
+            </div>
+        </main>
+        <div id="siteFooter">${renderTemplate(footerTemplate, footerData)}</div>
+    </div>
+</body>
+</html>`;
+      
+      res.send(html);
+      return;
+    } catch (error) {
+      console.error('文章 SSR 渲染失败，回退到普通模式:', error);
+    }
+  }
+  
+  // 普通用户或 SSR 失败时，返回普通 HTML
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

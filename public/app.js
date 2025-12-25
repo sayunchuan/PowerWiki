@@ -3,6 +3,7 @@ let postsTree = {};
 let postsFlat = [];
 let currentPost = null;
 let isMobileMenuOpen = false;
+let siteConfig = null; // 存储站点配置
 
 // 客户端缓存管理
 const ClientCache = {
@@ -211,8 +212,69 @@ async function loadConfig() {
   }
 }
 
+// 更新 SEO Meta 标签
+function updateSEOMetaTags(data) {
+  const baseUrl = window.location.origin;
+  const {
+    title = 'PowerWiki - 知识库',
+    description = 'PowerWiki - 一个现代化的知识库系统',
+    keywords = '知识库,文档,Markdown,Wiki',
+    url = baseUrl,
+    image = '',
+    type = 'website'
+  } = data;
+
+  // 更新基础 meta 标签
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('metaDescription').setAttribute('content', description);
+  document.getElementById('metaKeywords').setAttribute('content', keywords);
+  document.getElementById('canonicalUrl').setAttribute('href', url);
+
+  // 更新 Open Graph 标签
+  document.getElementById('ogUrl').setAttribute('content', url);
+  document.getElementById('ogTitle').setAttribute('content', title);
+  document.getElementById('ogDescription').setAttribute('content', description);
+  document.getElementById('ogImage').setAttribute('content', image || `${baseUrl}/og-image.png`);
+  if (siteConfig) {
+    document.getElementById('ogSiteName').setAttribute('content', siteConfig.siteTitle || 'PowerWiki');
+  }
+
+  // 更新 Twitter Card 标签
+  document.getElementById('twitterUrl').setAttribute('content', url);
+  document.getElementById('twitterTitle').setAttribute('content', title);
+  document.getElementById('twitterDescription').setAttribute('content', description);
+  document.getElementById('twitterImage').setAttribute('content', image || `${baseUrl}/og-image.png`);
+
+  // 更新结构化数据
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': type === 'article' ? 'Article' : 'WebSite',
+    'headline': title,
+    'description': description,
+    'url': url
+  };
+
+  if (type === 'article' && data.articleData) {
+    structuredData['datePublished'] = data.articleData.datePublished || new Date().toISOString();
+    structuredData['dateModified'] = data.articleData.dateModified || new Date().toISOString();
+    structuredData['author'] = {
+      '@type': 'Organization',
+      'name': siteConfig?.siteTitle || 'PowerWiki'
+    };
+    if (data.articleData.image) {
+      structuredData['image'] = data.articleData.image;
+    }
+  } else {
+    structuredData['name'] = siteConfig?.siteTitle || 'PowerWiki';
+    structuredData['description'] = siteConfig?.siteDescription || description;
+  }
+
+  document.getElementById('structuredData').textContent = JSON.stringify(structuredData);
+}
+
 // 应用配置
 function applyConfig(config) {
+  siteConfig = config; // 保存配置供 SEO 函数使用
 
   // 更新标题
   if (siteLogo) {
@@ -266,8 +328,18 @@ function applyConfig(config) {
     }
   }
 
-  // 更新页面标题
-  document.title = `${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}`;
+  // 更新页面标题和 SEO
+  const homeTitle = `${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}`;
+  document.title = homeTitle;
+
+  // 更新 SEO meta 标签（首页）
+  updateSEOMetaTags({
+    title: homeTitle,
+    description: config.siteDescription || 'PowerWiki - 一个现代化的知识库系统',
+    keywords: '知识库,文档,Markdown,Wiki',
+    url: window.location.origin,
+    type: 'website'
+  });
 }
 
 // 设置事件监听
@@ -384,6 +456,19 @@ function goToHome() {
     postView.classList.remove('active');
     currentPost = null;
     window.history.pushState({}, '', '/');
+
+    // 更新 SEO meta 标签（首页）
+    if (siteConfig) {
+      const homeTitle = `${siteConfig.siteTitle || 'PowerWiki'} - ${siteConfig.siteDescription || '知识库'}`;
+      document.title = homeTitle;
+      updateSEOMetaTags({
+        title: homeTitle,
+        description: siteConfig.siteDescription || 'PowerWiki - 一个现代化的知识库系统',
+        keywords: '知识库,文档,Markdown,Wiki',
+        url: window.location.origin,
+        type: 'website'
+      });
+    }
 
     // 检查首页是否有 README 内容，有则显示目录
     const homeContent = document.getElementById('homeContent');
@@ -855,6 +940,37 @@ function renderPost(post) {
   // 显示文章视图
   postView.classList.add('active');
   homeView.classList.remove('active');
+
+  // 更新 SEO meta 标签（文章页）
+  const articleUrl = `${window.location.origin}/post/${encodeURIComponent(post.path)}`;
+  const articleTitle = `${post.title} - ${siteConfig?.siteTitle || 'PowerWiki'}`;
+  const articleDescription = post.description || post.title || 'PowerWiki 文章';
+
+  // 提取文章中的第一张图片作为 og:image
+  let articleImage = '';
+  if (post.html) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = post.html;
+    const firstImg = tempDiv.querySelector('img');
+    if (firstImg && firstImg.src) {
+      articleImage = firstImg.src.startsWith('http') ? firstImg.src : `${window.location.origin}${firstImg.src}`;
+    }
+  }
+
+  document.title = articleTitle;
+  updateSEOMetaTags({
+    title: articleTitle,
+    description: articleDescription,
+    keywords: `${post.title},知识库,文档`,
+    url: articleUrl,
+    image: articleImage,
+    type: 'article',
+    articleData: {
+      datePublished: post.fileInfo?.modified || new Date().toISOString(),
+      dateModified: post.fileInfo?.modified || new Date().toISOString(),
+      image: articleImage
+    }
+  });
 
   // 更新footer统计信息
   updateFooterStats();
@@ -1367,6 +1483,20 @@ window.addEventListener('popstate', (e) => {
     homeView.classList.add('active');
     postView.classList.remove('active');
     currentPost = null;
+
+    // 更新 SEO meta 标签（首页）
+    if (siteConfig) {
+      const homeTitle = `${siteConfig.siteTitle || 'PowerWiki'} - ${siteConfig.siteDescription || '知识库'}`;
+      document.title = homeTitle;
+      updateSEOMetaTags({
+        title: homeTitle,
+        description: siteConfig.siteDescription || 'PowerWiki - 一个现代化的知识库系统',
+        keywords: '知识库,文档,Markdown,Wiki',
+        url: window.location.origin,
+        type: 'website'
+      });
+    }
+
     // 检查首页是否有 README 内容，有则显示目录
     const homeContent = document.getElementById('homeContent');
     if (homeContent && homeContent.innerHTML.trim() !== '') {
