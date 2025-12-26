@@ -19,6 +19,7 @@ const app = express();
 
 // 统计文件路径
 const statsFilePath = path.join(__dirname, '.stats.json');
+const accessLogFilePath = path.join(__dirname, '.access-log.json');
 
 /**
  * 读取统计数据
@@ -52,15 +53,145 @@ function saveStats(stats) {
 }
 
 /**
+ * 读取访问日志
+ * @returns {Array} 访问日志数组
+ */
+function readAccessLog() {
+  try {
+    if (fs.existsSync(accessLogFilePath)) {
+      const data = fs.readFileSync(accessLogFilePath, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('读取访问日志失败:', error);
+  }
+  return [];
+}
+
+/**
+ * 保存访问日志
+ * @param {Array} log - 访问日志数组
+ */
+function saveAccessLog(log) {
+  try {
+    // 只保留最近10000条记录，避免文件过大
+    const maxRecords = 10000;
+    const trimmedLog = log.slice(-maxRecords);
+    fs.writeFileSync(accessLogFilePath, JSON.stringify(trimmedLog, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('保存访问日志失败:', error);
+  }
+}
+
+/**
+ * 获取客户端IP地址
+ * @param {Object} req - Express 请求对象
+ * @returns {string} IP地址
+ */
+function getClientIP(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.headers['x-real-ip'] ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    req.ip ||
+    'unknown';
+}
+
+/**
+ * 从 User-Agent 解析浏览器名称
+ * @param {string} userAgent - User-Agent 字符串
+ * @returns {string} 浏览器名称
+ */
+function parseBrowser(userAgent) {
+  if (!userAgent || userAgent === 'unknown') {
+    return '未知';
+  }
+
+  const ua = userAgent.toLowerCase();
+
+  // 微信内置浏览器（优先检测，因为可能包含其他浏览器标识）
+  if (ua.includes('micromessenger')) {
+    return '微信浏览器';
+  }
+
+  // Edge（基于 Chromium，需要优先检测）
+  if (ua.includes('edg') || (ua.includes('edge') && !ua.includes('edgechromium'))) {
+    return 'Edge';
+  }
+
+  // Opera（需要优先检测，因为也包含 chrome）
+  if (ua.includes('opr') || ua.includes('opera')) {
+    return 'Opera';
+  }
+
+  // Chrome（Chrome 的 User-Agent 包含 chrome 和 safari，但 Edge/Opera 已排除）
+  if (ua.includes('chrome') && !ua.includes('edg') && !ua.includes('opr')) {
+    return 'Chrome';
+  }
+
+  // Firefox
+  if (ua.includes('firefox')) {
+    return 'Firefox';
+  }
+
+  // Safari（不包含 chrome，且不是移动端）
+  if (ua.includes('safari') && !ua.includes('chrome')) {
+    // 检查是否是 iOS
+    if (ua.includes('iphone') || ua.includes('ipad')) {
+      return 'Safari (iOS)';
+    }
+    return 'Safari';
+  }
+
+  // IE
+  if (ua.includes('msie') || ua.includes('trident')) {
+    return 'Internet Explorer';
+  }
+
+  // 移动端浏览器
+  if (ua.includes('mobile')) {
+    if (ua.includes('android')) {
+      return 'Android 浏览器';
+    }
+  }
+
+  // 爬虫
+  if (ua.includes('bot') || ua.includes('crawler') || ua.includes('spider')) {
+    return '爬虫';
+  }
+
+  return '其他';
+}
+
+/**
  * 记录文章访问
  * @param {string} filePath - 文件路径
+ * @param {Object} req - Express 请求对象
  */
-function recordPostView(filePath) {
+function recordPostView(filePath, req) {
   const stats = readStats();
   stats.totalViews = (stats.totalViews || 0) + 1;
   stats.postViews = stats.postViews || {};
   stats.postViews[filePath] = (stats.postViews[filePath] || 0) + 1;
   saveStats(stats);
+
+  // 记录详细访问日志
+  const accessLog = readAccessLog();
+  const ip = getClientIP(req);
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const browser = parseBrowser(userAgent);
+  const timestamp = new Date().toISOString();
+
+  accessLog.push({
+    timestamp,
+    ip,
+    filePath,
+    userAgent,
+    browser
+  });
+
+  saveAccessLog(accessLog);
+
   return stats.postViews[filePath];
 }
 
@@ -68,18 +199,18 @@ function recordPostView(filePath) {
 let config;
 try {
   config = require('./config.json');
-  
+
   // 验证配置
   if (!config.gitRepo) {
     console.error('❌ 配置错误: gitRepo 是必需的');
     process.exit(1);
   }
-  
+
   // 设置默认值
   config.pages = config.pages || {};
   config.pages.home = config.pages.home || '';
   config.pages.about = config.pages.about || '';
-  
+
 } catch (error) {
   console.error('❌ 配置文件加载失败，请确保 config.json 文件存在');
   console.error('💡 提示: 可以复制 config.example.json 为 config.json 并修改配置');
@@ -166,12 +297,12 @@ async function initRepo() {
   if (repoInitializing) {
     return; // 已经在初始化中，避免重复初始化
   }
-  
+
   repoInitializing = true;
   try {
     // 设置进度回调
     gitManager.setProgressCallback(showProgress);
-    
+
     console.log('📦 正在同步 Git 仓库...');
     const result = await gitManager.cloneOrUpdate();
     if (result.updated) {
@@ -207,17 +338,17 @@ function startAutoSync() {
       console.log('⏸️  跳过本次同步：Git 操作正在进行中...');
       return;
     }
-    
+
     // 检查仓库是否已初始化
     if (!repoInitialized) {
       console.log('⏸️  跳过本次同步：仓库尚未初始化完成...');
       return;
     }
-    
+
     try {
       // 设置进度回调（只在有更新时显示）
       gitManager.setProgressCallback(showProgress);
-      
+
       const result = await gitManager.cloneOrUpdate();
       if (result.updated) {
         console.log('⏰ [' + new Date().toLocaleString() + '] 仓库有更新，已自动同步');
@@ -262,7 +393,7 @@ function buildDirectoryTree(files) {
         const fileName = part.replace(/\.(md|markdown|pdf)$/i, ''); // 去掉扩展名
         const isReadme = /^readme$/i.test(fileName);
         const isAbout = /^about$/i.test(fileName);
-        
+
         const fileData = {
           name: fileName,
           path: file.path,
@@ -272,7 +403,7 @@ function buildDirectoryTree(files) {
           size: file.size,
           type: file.type || (file.name.endsWith('.pdf') ? 'pdf' : 'markdown')
         };
-        
+
         if (isReadme && fileData.type === 'markdown') {
           // README 文件作为目录的描述，不放入 files 列表
           current.readme = fileData;
@@ -315,12 +446,12 @@ function buildDirectoryTree(files) {
     // 处理目录
     if (node.dirs) {
       const dirs = Object.keys(node.dirs);
-      
+
       // 计算每个目录的最大修改时间
       dirs.forEach(dirName => {
         const dirNode = node.dirs[dirName];
         sortTree(dirNode);
-        
+
         // 计算目录的最大修改时间（取目录下所有文件和子目录的最大值）
         let maxTime = null;
         if (dirNode.files && dirNode.files.length > 0) {
@@ -354,7 +485,7 @@ function buildDirectoryTree(files) {
   }
 
   sortTree(tree);
-  
+
   // 清理内部属性
   function cleanTree(node) {
     if (node._maxModified !== undefined) {
@@ -366,7 +497,7 @@ function buildDirectoryTree(files) {
       });
     }
   }
-  
+
   cleanTree(tree);
   return tree;
 }
@@ -384,23 +515,23 @@ app.get('/sitemap.xml', async (req, res) => {
 
     const files = await gitManager.getAllMarkdownFiles(config.mdPath);
     const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
-    
+
     let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
     sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-    
+
     // 添加首页
     sitemap += '  <url>\n';
     sitemap += `    <loc>${baseUrl}/</loc>\n`;
     sitemap += '    <changefreq>daily</changefreq>\n';
     sitemap += '    <priority>1.0</priority>\n';
     sitemap += '  </url>\n';
-    
+
     // 添加所有文章
     files.forEach(file => {
       if (!file.path.endsWith('.pdf')) { // PDF 文件不加入 sitemap
         const url = `${baseUrl}/post/${encodeURIComponent(file.path)}`;
         const lastmod = new Date(file.modified).toISOString().split('T')[0];
-        
+
         sitemap += '  <url>\n';
         sitemap += `    <loc>${url}</loc>\n`;
         sitemap += `    <lastmod>${lastmod}</lastmod>\n`;
@@ -409,12 +540,12 @@ app.get('/sitemap.xml', async (req, res) => {
         sitemap += '  </url>\n';
       }
     });
-    
+
     sitemap += '</urlset>';
-    
+
     // 缓存 sitemap（1小时）
     cacheManager.set('sitemap', '', sitemap, 60 * 60 * 1000);
-    
+
     res.setHeader('Content-Type', 'application/xml');
     res.send(sitemap);
   } catch (error) {
@@ -436,10 +567,10 @@ app.get('/api/posts', async (req, res) => {
     const files = await gitManager.getAllMarkdownFiles(config.mdPath);
     const tree = buildDirectoryTree(files);
     const result = { tree, flat: files };
-    
+
     // 缓存结果（文章列表缓存10分钟）
     cacheManager.set('posts', '', result, 10 * 60 * 1000);
-    
+
     res.json(result);
   } catch (error) {
     console.error('获取文章列表失败:', error);
@@ -459,25 +590,25 @@ app.get('/api/post/*', async (req, res) => {
       // 如果解码失败，使用原始路径
       console.warn('路径解码失败，使用原始路径:', filePath);
     }
-    
+
     // 检查缓存
     const cached = cacheManager.get('post', filePath);
     if (cached) {
       // 更新访问量（缓存命中时也要记录）
-      const viewCount = recordPostView(filePath);
+      const viewCount = recordPostView(filePath, req);
       cached.viewCount = viewCount;
       res.json(cached);
       return;
     }
-    
+
     // 记录访问量
-    const viewCount = recordPostView(filePath);
-    
+    const viewCount = recordPostView(filePath, req);
+
     // 检查是否为 PDF 文件
     if (filePath.endsWith('.pdf')) {
       const fileInfo = await gitManager.getFileInfo(filePath);
       const fileName = fileInfo.name.replace(/\.pdf$/i, '');
-      
+
       const result = {
         type: 'pdf',
         title: fileName,
@@ -487,10 +618,10 @@ app.get('/api/post/*', async (req, res) => {
         description: 'PDF 文档',
         viewCount
       };
-      
+
       // 缓存结果（PDF 文件缓存15分钟）
       cacheManager.set('post', filePath, result, 15 * 60 * 1000);
-      
+
       res.json(result);
     } else {
       // Markdown 文件处理
@@ -510,10 +641,10 @@ app.get('/api/post/*', async (req, res) => {
         path: filePath,
         viewCount
       };
-      
+
       // 缓存结果（Markdown 文件缓存10分钟）
       cacheManager.set('post', filePath, result, 10 * 60 * 1000);
-      
+
       res.json(result);
     }
   } catch (error) {
@@ -603,6 +734,9 @@ app.get('/api/config', async (req, res) => {
   // 缓存结果（配置缓存30分钟）
   cacheManager.set('config', '', result, 30 * 60 * 1000);
 
+  // 设置缓存控制头，但允许浏览器缓存
+  res.setHeader('Cache-Control', 'public, max-age=1800'); // 30分钟
+
   res.json(result);
 });
 
@@ -616,11 +750,165 @@ app.get('/api/stats', (req, res) => {
   }
 
   const stats = readStats();
-  
+
   // 缓存1分钟
   cacheManager.set('stats', '', stats, 60 * 1000);
-  
+
   res.json(stats);
+});
+
+// API: 获取详细访问统计（统计页面用）
+app.get('/api/stats/detail', (req, res) => {
+  // 设置不缓存响应头
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  try {
+    const stats = readStats();
+    const accessLog = readAccessLog();
+
+    // 按IP统计
+    const ipStats = {};
+    // 按文章统计
+    const postStats = {};
+    // 按日期统计
+    const dateStats = {};
+    // 按小时统计
+    const hourStats = {};
+    // 按浏览器统计
+    const browserStats = {};
+    // 按星期统计
+    const weekdayStats = {};
+
+    accessLog.forEach(record => {
+      // IP统计
+      if (!ipStats[record.ip]) {
+        ipStats[record.ip] = {
+          ip: record.ip,
+          count: 0,
+          posts: new Set(),
+          firstVisit: record.timestamp,
+          lastVisit: record.timestamp
+        };
+      }
+      ipStats[record.ip].count++;
+      ipStats[record.ip].posts.add(record.filePath);
+      if (record.timestamp < ipStats[record.ip].firstVisit) {
+        ipStats[record.ip].firstVisit = record.timestamp;
+      }
+      if (record.timestamp > ipStats[record.ip].lastVisit) {
+        ipStats[record.ip].lastVisit = record.timestamp;
+      }
+
+      // 文章统计
+      if (!postStats[record.filePath]) {
+        postStats[record.filePath] = {
+          filePath: record.filePath,
+          count: 0,
+          uniqueIPs: new Set()
+        };
+      }
+      postStats[record.filePath].count++;
+      postStats[record.filePath].uniqueIPs.add(record.ip);
+
+      // 日期统计
+      const date = record.timestamp.split('T')[0];
+      dateStats[date] = (dateStats[date] || 0) + 1;
+
+      // 小时统计
+      const hour = new Date(record.timestamp).getHours();
+      hourStats[hour] = (hourStats[hour] || 0) + 1;
+
+      // 浏览器统计
+      const browser = record.browser || '未知';
+      browserStats[browser] = (browserStats[browser] || 0) + 1;
+
+      // 星期统计
+      const weekday = new Date(record.timestamp).getDay();
+      weekdayStats[weekday] = (weekdayStats[weekday] || 0) + 1;
+    });
+
+    // 转换Set为数组长度
+    Object.keys(ipStats).forEach(ip => {
+      ipStats[ip].posts = ipStats[ip].posts.size;
+    });
+
+    Object.keys(postStats).forEach(filePath => {
+      postStats[filePath].uniqueIPs = postStats[filePath].uniqueIPs.size;
+    });
+
+    // 转换为数组并排序
+    const ipStatsArray = Object.values(ipStats)
+      .sort((a, b) => b.count - a.count);
+
+    const postStatsArray = Object.values(postStats)
+      .sort((a, b) => b.count - a.count);
+
+    // 准备日期图表数据（最近30天）
+    const dateChartData = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dateChartData.push({
+        date: dateStr,
+        count: dateStats[dateStr] || 0
+      });
+    }
+
+    // 准备小时图表数据
+    const hourChartData = [];
+    for (let i = 0; i < 24; i++) {
+      hourChartData.push({
+        hour: i,
+        count: hourStats[i] || 0
+      });
+    }
+
+    // 准备浏览器图表数据（Top 8）
+    const browserChartData = Object.entries(browserStats)
+      .map(([browser, count]) => ({ browser, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    // 准备星期图表数据
+    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdayChartData = [];
+    for (let i = 0; i < 7; i++) {
+      weekdayChartData.push({
+        weekday: weekdayNames[i],
+        count: weekdayStats[i] || 0
+      });
+    }
+
+    // 准备最受欢迎文章图表数据（Top 10）
+    const popularPostsChartData = postStatsArray.slice(0, 10).map(post => ({
+      name: post.filePath.length > 30 ? post.filePath.substring(0, 30) + '...' : post.filePath,
+      count: post.count
+    }));
+
+    res.json({
+      summary: {
+        totalViews: stats.totalViews,
+        totalPosts: Object.keys(stats.postViews).length,
+        totalIPs: ipStatsArray.length,
+        totalRecords: accessLog.length
+      },
+      ipStats: ipStatsArray,
+      postStats: postStatsArray,
+      dateChart: dateChartData,
+      hourChart: hourChartData,
+      browserChart: browserChartData,
+      weekdayChart: weekdayChartData,
+      popularPostsChart: popularPostsChartData,
+      recentLogs: accessLog.slice(-50).reverse() // 最近50条记录
+    });
+  } catch (error) {
+    console.error('获取管理统计失败:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: 获取缓存统计信息（调试用）
@@ -631,7 +919,7 @@ app.get('/api/cache/stats', (req, res) => {
 // API: 清除缓存（管理员用）
 app.post('/api/cache/clear', (req, res) => {
   const { type, key } = req.body;
-  
+
   if (type) {
     cacheManager.delete(type, key);
     res.json({ success: true, message: `已清除缓存: ${type}${key ? `/${key}` : ''}` });
@@ -660,17 +948,17 @@ app.get('/', async (req, res) => {
   // 检查是否是搜索引擎爬虫
   const userAgent = req.get('user-agent') || '';
   const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver/i.test(userAgent);
-  
+
   if (isBot) {
     // 为搜索引擎提供预渲染的 HTML
     try {
       const headerTemplate = readTemplate('header');
       const footerTemplate = readTemplate('footer');
       const homeTemplate = readTemplate('home');
-      
+
       const stats = readStats();
       const homePagePath = config.pages.home || '';
-      
+
       let homeContent = null;
       if (homePagePath) {
         try {
@@ -685,25 +973,25 @@ app.get('/', async (req, res) => {
           // 静默失败
         }
       }
-      
+
       const headerData = {
         siteTitle: config.siteTitle || config.title,
         siteDescription: config.siteDescription || config.description,
         aboutPath: config.pages.about ? `/post/${encodeURIComponent(config.pages.about)}` : '/post/README.md'
       };
-      
+
       const footerData = {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
         totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
       };
-      
+
       const homeData = {
         siteTitle: config.siteTitle || config.title,
         siteDescription: config.siteDescription || config.description
       };
-      
+
       const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -728,14 +1016,14 @@ app.get('/', async (req, res) => {
     </div>
 </body>
 </html>`;
-      
+
       res.send(html);
       return;
     } catch (error) {
       console.error('SSR 渲染失败，回退到普通模式:', error);
     }
   }
-  
+
   // 普通用户或 SSR 失败时，返回普通 HTML
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -750,15 +1038,15 @@ app.get('/api/pdf/*', async (req, res) => {
     } catch (e) {
       console.warn('路径解码失败，使用原始路径:', filePath);
     }
-    
+
     if (!filePath.endsWith('.pdf')) {
       return res.status(400).json({ error: '不是 PDF 文件' });
     }
-    
+
     // 直接读取文件，不缓存
     const pdfBuffer = await gitManager.readPdfFile(filePath);
     const fileName = path.basename(filePath);
-    
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
@@ -774,7 +1062,7 @@ app.get('/post/*', async (req, res) => {
   // 检查是否是搜索引擎爬虫
   const userAgent = req.get('user-agent') || '';
   const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver/i.test(userAgent);
-  
+
   if (isBot) {
     // 为搜索引擎提供预渲染的 HTML
     try {
@@ -784,43 +1072,43 @@ app.get('/post/*', async (req, res) => {
       } catch (e) {
         // 解码失败，使用原始路径
       }
-      
+
       // 检查是否为 PDF 文件
       if (filePath.endsWith('.pdf')) {
         // PDF 文件不进行 SSR
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
         return;
       }
-      
+
       // 读取文章内容
       const content = await gitManager.readMarkdownFile(filePath);
       const parsed = parseMarkdown(content);
       const fileInfo = await gitManager.getFileInfo(filePath);
       const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
       const title = fileName || parsed.title || '文章';
-      
+
       const headerTemplate = readTemplate('header');
       const footerTemplate = readTemplate('footer');
       const stats = readStats();
-      
+
       const headerData = {
         siteTitle: config.siteTitle || config.title,
         siteDescription: config.siteDescription || config.description,
         aboutPath: config.pages.about ? `/post/${encodeURIComponent(config.pages.about)}` : '/post/README.md'
       };
-      
+
       const footerData = {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
         totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
       };
-      
+
       const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
       const articleUrl = `${baseUrl}/post/${encodeURIComponent(filePath)}`;
       const articleTitle = `${title} - ${config.siteTitle || 'PowerWiki'}`;
       const articleDescription = parsed.description || title || 'PowerWiki 文章';
-      
+
       // 提取第一张图片
       let articleImage = '';
       if (parsed.html) {
@@ -829,7 +1117,7 @@ app.get('/post/*', async (req, res) => {
           articleImage = imgMatch[1].startsWith('http') ? imgMatch[1] : `${baseUrl}${imgMatch[1]}`;
         }
       }
-      
+
       const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -906,16 +1194,21 @@ app.get('/post/*', async (req, res) => {
     </div>
 </body>
 </html>`;
-      
+
       res.send(html);
       return;
     } catch (error) {
       console.error('文章 SSR 渲染失败，回退到普通模式:', error);
     }
   }
-  
+
   // 普通用户或 SSR 失败时，返回普通 HTML
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 统计页面
+app.get('/stats', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 const PORT = config.port || 3000;

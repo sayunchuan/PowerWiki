@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - PowerWiki</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .admin-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: calc(100vh - var(--header-height) - var(--footer-height));
+        }
+        
+        /* 管理页面专用样式 */
+        body.admin-page .main-content {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        body.admin-page .sidebar {
+            display: none !important;
+        }
+        
+        body.admin-page .toc-sidebar {
+            display: none !important;
+        }
+        
+        .admin-header {
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .admin-header-content {
+            flex: 1;
+        }
+        
+        .admin-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-title);
+            margin-bottom: 8px;
+        }
+        
+        .admin-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: var(--primary-hover);
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .refresh-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .refresh-btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: var(--bg-body);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-card-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .chart-container {
+            background: var(--bg-body);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-title);
+            margin-bottom: 20px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        
+        .chart-wrapper canvas {
+            max-height: 350px !important;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .table-container {
+            background: var(--bg-body);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-container);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .table-header:hover {
+            background: var(--bg-hover);
+        }
+        
+        .table-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-title);
+            margin: 0;
+        }
+        
+        .table-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .table-toggle svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
+        
+        .table-container.collapsed .table-toggle svg {
+            transform: rotate(-90deg);
+        }
+        
+        .table-container.collapsed .table-wrapper {
+            display: none;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: var(--bg-container);
+        }
+        
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        td {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--text-body);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+        
+        .ip-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-primary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f56565;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 16px;
+            }
+            
+            .admin-header h1 {
+                font-size: 24px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            
+            .stat-card {
+                padding: 16px;
+            }
+            
+            .stat-card-value {
+                font-size: 24px;
+            }
+            
+            .chart-container {
+                padding: 16px;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .chart-wrapper canvas {
+                max-height: 250px !important;
+            }
+            
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 8px 12px;
+                white-space: nowrap;
+            }
+            
+            .ip-cell {
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-header h1 {
+                font-size: 20px;
+            }
+            
+            .chart-wrapper {
+                height: 200px;
+            }
+            
+            .chart-wrapper canvas {
+                max-height: 200px !important;
+            }
+        }
+    </style>
+</head>
+<body class="admin-page">
+    <div class="app-container">
+        <div id="siteHeader"></div>
+        <main class="main-content" style="padding-top: 0;">
+            <div class="admin-container">
+                <div class="admin-header">
+                    <div class="admin-header-content">
+                        <h1>📊 访问统计</h1>
+                        <p>实时监控网站访问情况和流量数据</p>
+                    </div>
+                    <button class="refresh-btn" id="refreshBtn" title="刷新数据">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M8 2v4l2-2M8 14v-4l-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 8a6 6 0 0 1 6-6c2.5 0 4.7 1.5 5.7 3.7M14 8a6 6 0 0 1-6 6c-2.5 0-4.7-1.5-5.7-3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        刷新
+                    </button>
+                </div>
+                
+                <div id="statsGrid" class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-title">总访问量</div>
+                        <div class="stat-card-value" id="totalViews">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">总文章数</div>
+                        <div class="stat-card-value" id="totalPosts">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">独立IP</div>
+                        <div class="stat-card-value" id="totalIPs">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">访问记录</div>
+                        <div class="stat-card-value" id="totalRecords">-</div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">📈 最近30天访问趋势</div>
+                        <div class="chart-wrapper">
+                            <canvas id="dateChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">⏰ 24小时访问分布</div>
+                        <div class="chart-wrapper">
+                            <canvas id="hourChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">🌐 浏览器分布</div>
+                        <div class="chart-wrapper">
+                            <canvas id="browserChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">📅 一周访问分布</div>
+                        <div class="chart-wrapper">
+                            <canvas id="weekdayChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">🔥 最受欢迎文章（Top 10）</div>
+                    <div class="chart-wrapper">
+                        <canvas id="popularPostsChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>🌐 IP访问统计（Top 10）</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="ipTable">
+                            <thead>
+                                <tr>
+                                    <th>IP地址</th>
+                                    <th>访问次数</th>
+                                    <th>访问文章数</th>
+                                    <th>首次访问</th>
+                                    <th>最后访问</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ipTableBody">
+                                <tr>
+                                    <td colspan="5" class="loading">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>📄 文章访问统计（Top 10）</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="postTable">
+                            <thead>
+                                <tr>
+                                    <th>文章路径</th>
+                                    <th>访问次数</th>
+                                    <th>独立IP数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="postTableBody">
+                                <tr>
+                                    <td colspan="3" class="loading">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="table-container" id="logTableContainer">
+                    <div class="table-header" onclick="toggleTable('logTableContainer')">
+                        <h2>🕐 最近访问记录</h2>
+                        <div class="table-toggle">
+                            <span>收起</span>
+                            <svg viewBox="0 0 16 16" fill="none">
+                                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="logTable">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>IP地址</th>
+                                    <th>文章路径</th>
+                                    <th>浏览器</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                                <tr>
+                                    <td colspan="4" class="loading">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <div id="siteFooter"></div>
+    </div>
+    
+    <script>
+        let dateChart, hourChart, browserChart, weekdayChart, popularPostsChart;
+        
+        async function loadAdminData() {
+            try {
+                // 添加时间戳防止缓存
+                const response = await fetch('/api/stats/detail?t=' + Date.now(), {
+                    cache: 'no-store'
+                });
+                if (!response.ok) {
+                    throw new Error('获取统计数据失败');
+                }
+                const data = await response.json();
+                
+                // 更新统计卡片
+                document.getElementById('totalViews').textContent = data.summary.totalViews.toLocaleString();
+                document.getElementById('totalPosts').textContent = data.summary.totalPosts.toLocaleString();
+                document.getElementById('totalIPs').textContent = data.summary.totalIPs.toLocaleString();
+                document.getElementById('totalRecords').textContent = data.summary.totalRecords.toLocaleString();
+                
+                // 渲染日期图表
+                renderDateChart(data.dateChart);
+                
+                // 渲染小时图表
+                renderHourChart(data.hourChart);
+                
+                // 渲染浏览器图表
+                if (data.browserChart) {
+                    renderBrowserChart(data.browserChart);
+                }
+                
+                // 渲染星期图表
+                if (data.weekdayChart) {
+                    renderWeekdayChart(data.weekdayChart);
+                }
+                
+                // 渲染最受欢迎文章图表
+                if (data.popularPostsChart) {
+                    renderPopularPostsChart(data.popularPostsChart);
+                }
+                
+                // 渲染IP统计表
+                renderIPTable(data.ipStats.slice(0, 10));
+                
+                // 渲染文章统计表
+                renderPostTable(data.postStats.slice(0, 10));
+                
+                // 渲染访问记录表
+                renderLogTable(data.recentLogs);
+                
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.textContent = '加载失败';
+                    el.className = 'error';
+                });
+            }
+        }
+        
+        function renderDateChart(data) {
+            const ctx = document.getElementById('dateChart').getContext('2d');
+            
+            if (dateChart) {
+                dateChart.destroy();
+            }
+            
+            dateChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => {
+                        const date = new Date(d.date);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }),
+                    datasets: [{
+                        label: '访问量',
+                        data: data.map(d => d.count),
+                        borderColor: '#3370ff',
+                        backgroundColor: 'rgba(51, 112, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderHourChart(data) {
+            const ctx = document.getElementById('hourChart').getContext('2d');
+            
+            if (hourChart) {
+                hourChart.destroy();
+            }
+            
+            hourChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => `${d.hour}:00`),
+                    datasets: [{
+                        label: '访问量',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderBrowserChart(data) {
+            const ctx = document.getElementById('browserChart').getContext('2d');
+            
+            if (browserChart) {
+                browserChart.destroy();
+            }
+            
+            const colors = [
+                '#3370ff', '#52c41a', '#faad14', '#f5222d', 
+                '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'
+            ];
+            
+            browserChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.browser),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderWeekdayChart(data) {
+            const ctx = document.getElementById('weekdayChart').getContext('2d');
+            
+            if (weekdayChart) {
+                weekdayChart.destroy();
+            }
+            
+            weekdayChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.weekday),
+                    datasets: [{
+                        label: '访问量',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderPopularPostsChart(data) {
+            const ctx = document.getElementById('popularPostsChart').getContext('2d');
+            
+            if (popularPostsChart) {
+                popularPostsChart.destroy();
+            }
+            
+            popularPostsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name),
+                    datasets: [{
+                        label: '访问次数',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderBrowserChart(data) {
+            const ctx = document.getElementById('browserChart').getContext('2d');
+            
+            if (browserChart) {
+                browserChart.destroy();
+            }
+            
+            const colors = [
+                '#3370ff', '#52c41a', '#faad14', '#f5222d', 
+                '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'
+            ];
+            
+            browserChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.browser),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderWeekdayChart(data) {
+            const ctx = document.getElementById('weekdayChart').getContext('2d');
+            
+            if (weekdayChart) {
+                weekdayChart.destroy();
+            }
+            
+            weekdayChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.weekday),
+                    datasets: [{
+                        label: '访问量',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderPopularPostsChart(data) {
+            const ctx = document.getElementById('popularPostsChart').getContext('2d');
+            
+            if (popularPostsChart) {
+                popularPostsChart.destroy();
+            }
+            
+            popularPostsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name),
+                    datasets: [{
+                        label: '访问次数',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderIPTable(data) {
+            const tbody = document.getElementById('ipTableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(ip => `
+                <tr>
+                    <td class="ip-cell">${ip.ip}</td>
+                    <td><span class="badge badge-primary">${ip.count}</span></td>
+                    <td>${ip.posts}</td>
+                    <td>${formatDateTime(ip.firstVisit)}</td>
+                    <td>${formatDateTime(ip.lastVisit)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderPostTable(data) {
+            const tbody = document.getElementById('postTableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="loading">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(post => `
+                <tr>
+                    <td>${post.filePath}</td>
+                    <td><span class="badge badge-primary">${post.count}</span></td>
+                    <td>${post.uniqueIPs}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderLogTable(data) {
+            const tbody = document.getElementById('logTableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(log => `
+                <tr>
+                    <td>${formatDateTime(log.timestamp)}</td>
+                    <td class="ip-cell">${log.ip}</td>
+                    <td>${log.filePath}</td>
+                    <td>${log.browser || '未知'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function formatDateTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 加载页面配置
+        async function loadConfig() {
+            try {
+                // 添加时间戳防止缓存
+                const response = await fetch('/api/config?t=' + Date.now(), {
+                    cache: 'no-store'
+                });
+                const config = await response.json();
+                
+                // 加载header和footer
+                const headerEl = document.getElementById('siteHeader');
+                const footerEl = document.getElementById('siteFooter');
+                
+                if (headerEl) headerEl.innerHTML = config.header;
+                if (footerEl) footerEl.innerHTML = config.footer;
+                
+                // 添加标题点击事件
+                const siteTitle = document.querySelector('.site-title');
+                if (siteTitle) {
+                    siteTitle.style.cursor = 'pointer';
+                    siteTitle.addEventListener('click', () => {
+                        window.location.href = '/';
+                    });
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        }
+        
+        // 切换表格折叠状态
+        function toggleTable(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.classList.toggle('collapsed');
+                const toggle = container.querySelector('.table-toggle span');
+                if (toggle) {
+                    toggle.textContent = container.classList.contains('collapsed') ? '展开' : '收起';
+                }
+            }
+        }
+        
+        // 刷新数据
+        let isRefreshing = false;
+        async function refreshData() {
+            if (isRefreshing) return;
+            
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.classList.add('loading');
+                refreshBtn.disabled = true;
+            }
+            
+            isRefreshing = true;
+            try {
+                await loadAdminData();
+            } finally {
+                isRefreshing = false;
+                if (refreshBtn) {
+                    refreshBtn.classList.remove('loading');
+                    refreshBtn.disabled = false;
+                }
+            }
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadAdminData();
+            
+            // 刷新按钮事件
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', refreshData);
+            }
+            
+            // 每30秒自动刷新数据
+            setInterval(loadAdminData, 30000);
+        });
+        
+    </script>
+</body>
+</html>
+
