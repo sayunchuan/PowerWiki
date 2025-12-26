@@ -1401,22 +1401,27 @@ function setupTOCScroll() {
 }
 
 // 更新footer统计信息
-async function updateFooterStats() {
+async function updateFooterStats(forceRefresh = false) {
   try {
-    // 统计数据缓存时间很短，但也可以使用缓存来减少请求
-    const cached = ClientCache.get('stats');
-    if (cached) {
-      updateStatsUI(cached);
-      // 后台更新统计数据
-      updateStatsInBackground();
-      return;
+    // 如果强制刷新，跳过缓存
+    if (!forceRefresh) {
+      const cached = ClientCache.get('stats');
+      if (cached) {
+        updateStatsUI(cached);
+        // 后台更新统计数据
+        updateStatsInBackground();
+        return;
+      }
     }
 
-    const response = await fetch('/api/stats');
+    // 添加时间戳防止浏览器缓存
+    const response = await fetch('/api/stats?t=' + Date.now(), {
+      cache: 'no-store'
+    });
     const stats = await response.json();
 
-    // 缓存统计数据
-    ClientCache.set('stats', '', stats);
+    // 缓存统计数据（缩短缓存时间到30秒）
+    ClientCache.set('stats', '', stats, 30 * 1000);
 
     updateStatsUI(stats);
   } catch (error) {
@@ -1440,9 +1445,12 @@ function updateStatsUI(stats) {
 // 后台更新统计数据
 async function updateStatsInBackground() {
   try {
-    const response = await fetch('/api/stats');
+    // 添加时间戳防止浏览器缓存
+    const response = await fetch('/api/stats?t=' + Date.now(), {
+      cache: 'no-store'
+    });
     const stats = await response.json();
-    ClientCache.set('stats', '', stats);
+    ClientCache.set('stats', '', stats, 30 * 1000);
     updateStatsUI(stats);
   } catch (error) {
     console.warn('后台更新统计数据失败:', error);

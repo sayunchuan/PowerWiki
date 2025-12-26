@@ -742,7 +742,10 @@ app.get('/api/config', async (req, res) => {
 
 // API: 获取统计数据
 app.get('/api/stats', (req, res) => {
-  // 统计数据缓存时间较短（1分钟），因为访问量会频繁变化
+  // 设置缓存控制头，允许浏览器缓存但时间较短
+  res.setHeader('Cache-Control', 'public, max-age=30'); // 30秒
+
+  // 统计数据缓存时间较短（30秒），因为访问量会频繁变化
   const cached = cacheManager.get('stats');
   if (cached) {
     res.json(cached);
@@ -751,8 +754,8 @@ app.get('/api/stats', (req, res) => {
 
   const stats = readStats();
 
-  // 缓存1分钟
-  cacheManager.set('stats', '', stats, 60 * 1000);
+  // 缓存30秒
+  cacheManager.set('stats', '', stats, 30 * 1000);
 
   res.json(stats);
 });
