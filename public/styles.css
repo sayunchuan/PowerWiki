@@ -653,6 +653,68 @@ body {
   opacity: 0.6;
 }
 
+/* 文章许可证和原创声明 */
+.post-license {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-light);
+}
+
+.license-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(to right, rgba(51, 112, 255, 0.04), transparent);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+}
+
+.license-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-top: 2px;
+}
+
+.license-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.license-text {
+  flex: 1;
+}
+
+.license-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-title);
+  margin-bottom: 6px;
+}
+
+.license-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.license-description a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.license-description a:hover {
+  border-bottom-color: var(--primary);
+}
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,

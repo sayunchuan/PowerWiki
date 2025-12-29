@@ -1001,6 +1001,31 @@ function renderPost(post) {
     postBody.appendChild(updatedTimeDiv);
   }
 
+  // 添加许可证和原创声明到文章末尾
+  // 先移除可能存在的旧许可证元素
+  const existingLicense = postBody.querySelector('.post-license');
+  if (existingLicense) {
+    existingLicense.remove();
+  }
+
+  const licenseDiv = document.createElement('div');
+  licenseDiv.className = 'post-license';
+  licenseDiv.innerHTML = `
+    <div class="license-content">
+      <div class="license-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1L3 3.5v5c0 3.5 2.5 6.5 5 7.5 2.5-1 5-4 5-7.5v-5L8 1z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 7h4M6 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="license-text">
+        <p class="license-title">版权声明</p>
+        <p class="license-description">如无特别说明，本文档为作者原创内容。本文档基于 <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT 许可证</a> 发布。</p>
+      </div>
+    </div>
+  `;
+  postBody.appendChild(licenseDiv);
+
   // 格式化文件大小
   const sizeKB = (post.fileInfo.size / 1024).toFixed(2);
   const sizeMB = (post.fileInfo.size / (1024 * 1024)).toFixed(2);
