@@ -170,9 +170,9 @@ const searchInput = document.getElementById('searchInput');
 const siteLogo = document.getElementById('siteLogo');
 const homeView = document.getElementById('homeView');
 const postView = document.getElementById('postView');
-const postTitle = document.getElementById('postTitle');
 const postBody = document.getElementById('postBody');
 const postDate = document.getElementById('postDate');
+const postFileName = document.getElementById('postFileName');
 const postSize = document.getElementById('postSize');
 const siteHeader = document.getElementById('siteHeader');
 const siteFooter = document.getElementById('siteFooter');
@@ -895,8 +895,17 @@ async function loadPost(filePath) {
 // 渲染文章
 function renderPost(post) {
 
-  // 渲染文章
-  postTitle.textContent = post.title;
+  // 显示文件名（从路径中提取）
+  const fileName = post.path.split('/').pop().replace(/\.(md|markdown|pdf)$/i, '');
+  if (postFileName) {
+    postFileName.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3 2h5l3 3v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 2v3h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>${escapeHtml(fileName)}</span>
+    `;
+  }
 
   // 显示查看量
   const viewCount = post.viewCount || 0;
