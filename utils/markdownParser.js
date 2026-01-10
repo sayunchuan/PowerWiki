@@ -1,9 +1,10 @@
 /**
  * Markdown Parser
- * 
+ *
  * Markdown 解析模块
  * 负责将 Markdown 文本转换为 HTML，并提取标题和描述
- * 
+ * 支持 YAML Frontmatter 解析
+ *
  * @module markdownParser
  */
 
@@ -46,6 +47,52 @@ try {
   console.warn('配置 marked 失败，使用默认配置:', err);
 }
 
+/**
+ * 解析 YAML Frontmatter
+ * @param {string} markdown - Markdown 内容
+ * @returns {Object} { frontmatter: Object, content: string }
+ */
+function parseFrontmatter(markdown) {
+  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+  const match = markdown.match(frontmatterRegex);
+
+  if (!match) {
+    return {
+      frontmatter: {},
+      content: markdown
+    };
+  }
+
+  const frontmatterText = match[1];
+  const content = match[2];
+  const frontmatter = {};
+
+  // 解析 YAML (简单实现)
+  const lines = frontmatterText.split('\n');
+  for (const line of lines) {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.substring(0, colonIndex).trim();
+      let value = line.substring(colonIndex + 1).trim();
+
+      // 处理数组 [tag1, tag2]
+      if (value.startsWith('[') && value.endsWith(']')) {
+        value = value.substring(1, value.length - 1)
+          .split(',')
+          .map(v => v.trim())
+          .filter(v => v);
+      }
+
+      frontmatter[key] = value;
+    }
+  }
+
+  return {
+    frontmatter,
+    content
+  };
+}
+
 // 提取标题
 function extractTitle(markdown) {
   const lines = markdown.split('\n');
@@ -71,29 +118,38 @@ function extractDescription(markdown) {
 
 // 解析 Markdown
 function parseMarkdown(markdown) {
+  // 先解析 Frontmatter
+  const { frontmatter, content } = parseFrontmatter(markdown);
+
   let html;
-  // 兼容不同版本的 marked
+  // 兼容不同版本的 marked (只解析内容部分，不包含 Frontmatter)
   try {
     if (typeof marked.parse === 'function') {
-      html = marked.parse(markdown);
+      html = marked.parse(content);
     } else if (typeof marked === 'function') {
-      html = marked(markdown);
+      html = marked(content);
     } else {
-      html = markdown; // 降级处理
+      html = content; // 降级处理
     }
   } catch (err) {
     console.error('Markdown 解析错误:', err);
-    html = markdown;
+    html = content;
   }
-  
-  const title = extractTitle(markdown);
-  const description = extractDescription(markdown);
-  
+
+  // 优先使用 Frontmatter 中的信息，否则从内容中提取
+  const title = frontmatter.title || extractTitle(content);
+  const description = frontmatter.description || extractDescription(content);
+  const keywords = frontmatter.keywords || '';
+  const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : (frontmatter.tags || '').split(',').map(t => t.trim()).filter(t => t);
+
   return {
     html,
     title,
     description,
-    raw: markdown
+    keywords,
+    tags,
+    frontmatter,
+    raw: content  // 返回不含 Frontmatter 的原始内容
   };
 }
 

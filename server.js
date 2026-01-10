@@ -747,24 +747,22 @@ app.get('/api/post/*', async (req, res) => {
 
       // 使用文件名作为标题（去掉扩展名）
       const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
-      const title = fileName || parsed.title;
+      const title = parsed.title || fileName;
 
       // 优化图片标签（添加 alt 和 loading="lazy"）
       const optimizedHtml = seoHelper.optimizeImageTags(parsed.html, title);
 
-      // 生成优化的 Meta 描述
-      const description = seoHelper.generateDescription(optimizedHtml, title);
-
-      // 提取关键词
-      const keywords = seoHelper.extractKeywords(optimizedHtml, title, filePath);
+      // 优先使用 Frontmatter 中的描述和关键词，否则生成
+      const description = parsed.description || seoHelper.generateDescription(optimizedHtml, title);
+      const keywords = parsed.keywords || seoHelper.extractKeywords(optimizedHtml, title, filePath);
 
       const result = {
         ...parsed,
         type: 'markdown',
-        title, // 使用文件名作为标题
-        html: optimizedHtml, // 使用优化后的 HTML
-        description, // 使用生成的描述
-        keywords, // 添加关键词
+        title,
+        html: optimizedHtml,
+        description,
+        keywords,
         fileInfo,
         path: filePath,
         viewCount
@@ -1217,7 +1215,7 @@ app.get('/post/*', async (req, res) => {
       const parsed = parseMarkdown(content);
       const fileInfo = await gitManager.getFileInfo(filePath);
       const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
-      const title = fileName || parsed.title || '文章';
+      const title = parsed.title || fileName;
 
       const headerTemplate = readTemplate('header');
       const footerTemplate = readTemplate('footer');
@@ -1243,11 +1241,9 @@ app.get('/post/*', async (req, res) => {
       // 优化图片标签
       const optimizedHtml = seoHelper.optimizeImageTags(parsed.html, title);
 
-      // 生成优化的描述
-      const articleDescription = seoHelper.generateDescription(optimizedHtml, title);
-
-      // 提取关键词
-      const articleKeywords = seoHelper.extractKeywords(optimizedHtml, title, filePath);
+      // 优先使用 Frontmatter 中的描述和关键词，否则生成
+      const articleDescription = parsed.description || seoHelper.generateDescription(optimizedHtml, title);
+      const articleKeywords = parsed.keywords || seoHelper.extractKeywords(optimizedHtml, title, filePath);
 
       // 提取图片
       const images = seoHelper.extractImages(optimizedHtml, baseUrl);
