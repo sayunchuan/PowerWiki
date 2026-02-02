@@ -1,0 +1,9 @@
+node_modules
+.git
+.github
+.git-repos
+.stats.json
+.access-log.json
+config.json
+*.log
+*.md
