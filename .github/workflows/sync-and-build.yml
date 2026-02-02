@@ -2,8 +2,8 @@ name: Sync Upstream and Build Docker
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # 每6小时执行（UTC时间）
-  workflow_dispatch:        # 支持手动触发
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   sync-and-build:
@@ -23,11 +23,9 @@ jobs:
       - name: Sync from upstream
         id: sync
         run: |
-          # 添加源仓库
           git remote add upstream https://github.com/steven-ld/PowerWiki.git || true
           git fetch upstream
           
-          # 检查是否有新的提交
           LOCAL=$(git rev-parse HEAD)
           UPSTREAM=$(git rev-parse upstream/master)
           BASE=$(git merge-base HEAD upstream/master)
@@ -40,10 +38,16 @@ jobs:
             echo "has_updates=false" >> $GITHUB_OUTPUT
           else
             echo "发现更新，开始合并..."
-            # 使用 -X theirs 策略：冲突时优先使用 upstream 版本
             git merge upstream/master -X theirs -m "chore: sync with upstream"
             git push origin master
             echo "has_updates=true" >> $GITHUB_OUTPUT
+          fi
+
+      # 确保 entrypoint.sh 使用 LF 行尾符
+      - name: Fix line endings
+        run: |
+          if [ -f docker-entrypoint.sh ]; then
+            sed -i 's/\r$//' docker-entrypoint.sh
           fi
 
       - name: Set up Docker Buildx
@@ -65,3 +69,12 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # 同步 DOCKER.md 到 DockerHub 仓库描述
+      - name: Update DockerHub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki
+          readme-filepath: ./DOCKER.md

@@ -6,4 +6,3 @@ node_modules
 .access-log.json
 config.json
 *.log
-*.md

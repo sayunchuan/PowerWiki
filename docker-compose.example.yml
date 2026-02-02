@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  powerwiki:
+    image: sayunchuan/powerwiki:latest
+    container_name: powerwiki
+    ports:
+      - "3000:3000"
+    volumes:
+      # 配置文件（必须提前创建）
+      - ./config.json:/app/config.json
+      # 统计数据持久化
+      - powerwiki-data:/app/data
+    restart: unless-stopped
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  powerwiki-data:
+    name: powerwiki-data
