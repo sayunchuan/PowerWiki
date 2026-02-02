@@ -73,8 +73,9 @@ jobs:
       # 同步 DOCKER.md 到 DockerHub 仓库描述
       - name: Update DockerHub description
         uses: peter-evans/dockerhub-description@v4
+        continue-on-error: true
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki
           readme-filepath: ./DOCKER.md
