@@ -74,8 +74,13 @@ Create config.json:
 ### Container Info
 
 - Port: 3000
-- User: powerwiki (UID 1001)
+- User: root
 - Data directory: /app/data
+
+### Important Notes
+
+- When mounting config.json, the file must exist on the host before starting the container
+- If config.json is not mounted, a default one will be created automatically (but lost on container restart)
 
 ---
 
@@ -145,8 +150,13 @@ volumes:
 ### 容器信息
 
 - 端口：3000
-- 运行用户：powerwiki (UID 1001)
+- 运行用户：root
 - 数据目录：/app/data
+
+### 重要说明
+
+- 挂载 config.json 时，文件必须在宿主机上提前存在
+- 如果不挂载 config.json，容器会自动创建默认配置（但容器重启后会丢失）
 
 ---
 

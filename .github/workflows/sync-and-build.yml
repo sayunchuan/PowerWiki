@@ -50,10 +50,13 @@ jobs:
             sed -i 's/\r$//' docker-entrypoint.sh
           fi
 
+      # 以下步骤仅在有更新或手动触发时执行
       - name: Set up Docker Buildx
+        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
+        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -61,6 +64,7 @@ jobs:
 
       # 获取版本信息用于标签
       - name: Get version info
+        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         id: version
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -71,6 +75,7 @@ jobs:
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Build and push
+        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -85,6 +90,7 @@ jobs:
 
       # 同步 DOCKER.md 到 DockerHub 仓库描述
       - name: Update DockerHub description
+        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         uses: peter-evans/dockerhub-description@v4
         continue-on-error: true
         with:
@@ -92,3 +98,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki
           readme-filepath: ./DOCKER.md
+
+      - name: Skip build (no updates)
+        if: steps.sync.outputs.has_updates != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "No updates from upstream, skipping Docker build."
