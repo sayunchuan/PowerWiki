@@ -5,7 +5,7 @@ services:
     image: sayunchuan/powerwiki:latest
     container_name: powerwiki
     ports:
-      - "3000:3000"
+      - "3150:3150"
     volumes:
       # 配置文件（必须提前创建）
       - ./config.json:/app/config.json
@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     # 健康检查
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3150"]
       interval: 30s
       timeout: 10s
       retries: 3

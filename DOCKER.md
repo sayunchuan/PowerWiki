@@ -15,17 +15,17 @@ A modern Git-based Markdown wiki system with auto-sync, syntax highlighting, and
 ### Quick Start
 
 ```bash
-docker run -d -p 3000:3000 sayunchuan/powerwiki
+docker run -d -p 3150:3150 sayunchuan/powerwiki
 ```
 
-Visit http://localhost:3000
+Visit http://localhost:3150
 
 ### Configuration
 
 **Mount config.json:**
 
 ```bash
-docker run -d -p 3000:3000 \
+docker run -d -p 3150:3150 \
   -v /path/to/config.json:/app/config.json \
   sayunchuan/powerwiki
 ```
@@ -33,7 +33,7 @@ docker run -d -p 3000:3000 \
 **Persist statistics data:**
 
 ```bash
-docker run -d -p 3000:3000 \
+docker run -d -p 3150:3150 \
   -v /path/to/config.json:/app/config.json \
   -v /path/to/data:/app/data \
   sayunchuan/powerwiki
@@ -47,7 +47,7 @@ services:
   powerwiki:
     image: sayunchuan/powerwiki:latest
     ports:
-      - "3000:3000"
+      - "3150:3150"
     volumes:
       - ./config.json:/app/config.json
       - powerwiki-data:/app/data
@@ -65,7 +65,7 @@ Create config.json:
 {
   "gitRepo": "https://github.com/your-username/your-wiki-repo.git",
   "repoBranch": "main",
-  "port": 3000,
+  "port": 3150,
   "siteTitle": "My Wiki",
   "siteDescription": "Knowledge Base"
 }
@@ -73,14 +73,24 @@ Create config.json:
 
 ### Container Info
 
-- Port: 3000
+- Port: 3150
 - User: root
 - Data directory: /app/data
+- Git cache directory: /app/cache
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| CONFIG_PATH | /app/config.json | Path to configuration file |
+| DATA_DIR | /app/data | Directory for stats and logs |
+| GIT_CACHE_DIR | /app/cache | Git repository cache directory |
+| LANG | zh-CN | Console output language (zh-CN, en) |
 
 ### Important Notes
 
-- When mounting config.json, the file must exist on the host before starting the container
-- If config.json is not mounted, a default one will be created automatically (but lost on container restart)
+- config.json must exist before starting the container
+- Use environment variables to customize data paths
 
 ---
 
@@ -91,17 +101,17 @@ Create config.json:
 ### 快速开始
 
 ```bash
-docker run -d -p 3000:3000 sayunchuan/powerwiki
+docker run -d -p 3150:3150 sayunchuan/powerwiki
 ```
 
-访问 http://localhost:3000
+访问 http://localhost:3150
 
 ### 配置方式
 
 **挂载配置文件：**
 
 ```bash
-docker run -d -p 3000:3000 \
+docker run -d -p 3150:3150 \
   -v /路径/config.json:/app/config.json \
   sayunchuan/powerwiki
 ```
@@ -109,7 +119,7 @@ docker run -d -p 3000:3000 \
 **持久化统计数据：**
 
 ```bash
-docker run -d -p 3000:3000 \
+docker run -d -p 3150:3150 \
   -v /路径/config.json:/app/config.json \
   -v /路径/data:/app/data \
   sayunchuan/powerwiki
@@ -123,7 +133,7 @@ services:
   powerwiki:
     image: sayunchuan/powerwiki:latest
     ports:
-      - "3000:3000"
+      - "3150:3150"
     volumes:
       - ./config.json:/app/config.json
       - powerwiki-data:/app/data
@@ -141,7 +151,7 @@ volumes:
 {
   "gitRepo": "https://github.com/用户名/仓库.git",
   "repoBranch": "main",
-  "port": 3000,
+  "port": 3150,
   "siteTitle": "我的知识库",
   "siteDescription": "知识库描述"
 }
@@ -149,14 +159,24 @@ volumes:
 
 ### 容器信息
 
-- 端口：3000
+- 端口：3150
 - 运行用户：root
 - 数据目录：/app/data
+- Git 缓存目录：/app/cache
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| CONFIG_PATH | /app/config.json | 配置文件路径 |
+| DATA_DIR | /app/data | 统计数据和日志存储目录 |
+| GIT_CACHE_DIR | /app/cache | Git 仓库缓存目录 |
+| LANG | zh-CN | 控制台输出语言（zh-CN、en） |
 
 ### 重要说明
 
-- 挂载 config.json 时，文件必须在宿主机上提前存在
-- 如果不挂载 config.json，容器会自动创建默认配置（但容器重启后会丢失）
+- config.json 必须在启动容器前存在
+- 可通过环境变量自定义数据存储路径
 
 ---
 
