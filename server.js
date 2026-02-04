@@ -990,11 +990,6 @@ app.get('/api/stats/detail', (req, res) => {
       referrerStats[referrerType] = (referrerStats[referrerType] || 0) + 1;
     });
 
-    // 转换 postStats 中的 Set 为数字
-    Object.keys(postStats).forEach(filePath => {
-      postStats[filePath].uniqueIPs = postStats[filePath].uniqueIPs.size;
-    });
-
     // 计算访问深度和回访用户
     Object.keys(ipStats).forEach(ip => {
       const visitCount = ipStats[ip].count;
@@ -1015,6 +1010,7 @@ app.get('/api/stats/detail', (req, res) => {
       ipStats[ip].posts = postCount;
     });
 
+    // 转换 postStats 中的 Set 为数字（只执行一次）
     Object.keys(postStats).forEach(filePath => {
       postStats[filePath].uniqueIPs = postStats[filePath].uniqueIPs.size;
     });
