@@ -3,14 +3,14 @@ FROM node:18-alpine
 # 设置工作目录
 WORKDIR /app
 
-# 安装 git（用于仓库同步）
-RUN apk add --no-cache git
+# 安装 git（用于仓库同步）和 wget（用于健康检查）
+RUN apk add --no-cache git wget
 
 # 复制 package 文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# 安装生产依赖（使用 npm install 因为没有 package-lock.json）
+RUN npm install --omit=dev
 
 # 复制应用代码
 COPY . .
