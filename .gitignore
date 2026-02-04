@@ -9,6 +9,7 @@ config.json
 
 # Git repository cache
 .git-repos/
+.git-cache/
 
 # Logs
 *.log

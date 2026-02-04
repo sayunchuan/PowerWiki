@@ -7,12 +7,25 @@
   },
   "git": {
     "cloning": "Cloning repository...",
+    "cloned": "Repository cloned",
+    "receiving": "Receiving objects",
+    "resolving": "Resolving deltas",
     "pulling": "Pulling latest updates...",
     "syncing": "Syncing repository...",
     "syncComplete": "Repository sync completed",
     "syncFailed": "Repository sync failed",
-    "autoSyncEnabled": "Auto sync enabled, interval",
-    "minutes": "minutes"
+    "upToDate": "Repository is up to date",
+    "autoSyncFailed": "Auto sync failed",
+    "cloneFailed": "Git clone failed, exit code",
+    "cloneExecutionFailed": "Git clone execution failed",
+    "autoSyncEnabled": "Auto sync enabled",
+    "interval": "interval",
+    "seconds": "s",
+    "minutes": "minutes",
+    "repository": "repository",
+    "branch": "branch",
+    "autoSyncInterval": "Auto sync interval",
+    "syncTip": "Tip: If repository sync fails, please check the gitRepo configuration in config file"
   },
   "cache": {
     "clearing": "Clearing cache...",
@@ -22,6 +35,8 @@
     "configNotFound": "Configuration file not found",
     "gitRepoRequired": "Git repository URL is required",
     "fileNotFound": "File not found",
-    "serverError": "Server error"
+    "serverError": "Server error",
+    "cannotReadHomePage": "Cannot read homepage file",
+    "usingDefaultWelcome": "Using default welcome page"
   }
 }
