@@ -8,6 +8,7 @@
  */
 
 const simpleGit = require('simple-git');
+const { t } = require('../config/i18n');
 const fs = require('fs-extra');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -150,12 +151,12 @@ class GitManager {
       }
       
       // 如果不存在或不完整，执行 clone
-      this.showProgress('📦 正在克隆仓库...');
+      this.showProgress(`📦 ${t('git.cloning')}`);
       
       // 使用 spawn 执行 git clone 以捕获进度输出
       const result = await new Promise((resolve, reject) => {
         let lastProgress = 0;
-        let progressType = '接收对象';
+        let progressType = t('git.receiving');
         
         const gitProcess = spawn('git', [
           'clone',
@@ -175,7 +176,7 @@ class GitManager {
           if (progress && progress.progress !== null) {
             if (progress.progress !== lastProgress) {
               lastProgress = progress.progress;
-              progressType = progress.type === 'receiving' ? '接收对象' : '解析增量';
+              progressType = progress.type === 'receiving' ? t('git.receiving') : t('git.resolving');
               this.showProgress(`📥 ${progressType}:`, progress.progress);
             }
           }
@@ -189,7 +190,7 @@ class GitManager {
           if (progress && progress.progress !== null) {
             if (progress.progress !== lastProgress) {
               lastProgress = progress.progress;
-              progressType = progress.type === 'receiving' ? '接收对象' : '解析增量';
+              progressType = progress.type === 'receiving' ? t('git.receiving') : t('git.resolving');
               this.showProgress(`📥 ${progressType}:`, progress.progress);
             }
           }
@@ -197,15 +198,15 @@ class GitManager {
         
         gitProcess.on('close', (code) => {
           if (code === 0) {
-            this.showProgress(`✅ 已克隆仓库: ${this.repoName}`);
+            this.showProgress(`✅ ${t('git.cloned')}: ${this.repoName}`);
             resolve({ updated: true, isNew: true });
           } else {
-            reject(new Error(`Git clone 失败，退出码: ${code}`));
+            reject(new Error(`${t('git.cloneFailed')}: ${code}`));
           }
         });
         
         gitProcess.on('error', (error) => {
-          reject(new Error(`Git clone 执行失败: ${error.message}`));
+          reject(new Error(`${t('git.cloneExecutionFailed')}: ${error.message}`));
         });
       });
       
@@ -268,7 +269,7 @@ class GitManager {
     if (await fs.pathExists(fullPath)) {
       return await fs.readFile(fullPath, 'utf-8');
     }
-    throw new Error(`文件不存在: ${filePath}`);
+    throw new Error(`${t('error.fileNotFound')}: ${filePath}`);
   }
 
   async readPdfFile(filePath) {
@@ -276,7 +277,7 @@ class GitManager {
     if (await fs.pathExists(fullPath)) {
       return await fs.readFile(fullPath);
     }
-    throw new Error(`文件不存在: ${filePath}`);
+    throw new Error(`${t('error.fileNotFound')}: ${filePath}`);
   }
 
   /**

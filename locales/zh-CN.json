@@ -7,12 +7,25 @@
   },
   "git": {
     "cloning": "正在克隆仓库...",
+    "cloned": "已克隆仓库",
+    "receiving": "接收对象",
+    "resolving": "解析增量",
     "pulling": "正在拉取最新更新...",
     "syncing": "正在同步仓库...",
     "syncComplete": "仓库同步完成",
     "syncFailed": "仓库同步失败",
-    "autoSyncEnabled": "自动同步已启用，间隔",
-    "minutes": "分钟"
+    "upToDate": "仓库已是最新版本",
+    "autoSyncFailed": "自动同步失败",
+    "cloneFailed": "Git clone 失败，退出码",
+    "cloneExecutionFailed": "Git clone 执行失败",
+    "autoSyncEnabled": "已启动自动同步",
+    "interval": "间隔",
+    "seconds": "秒",
+    "minutes": "分钟",
+    "repository": "仓库",
+    "branch": "分支",
+    "autoSyncInterval": "自动同步间隔",
+    "syncTip": "提示: 如果仓库同步失败，请检查配置文件中的 gitRepo 配置"
   },
   "cache": {
     "clearing": "正在清理缓存...",
@@ -22,6 +35,8 @@
     "configNotFound": "配置文件未找到",
     "gitRepoRequired": "Git 仓库 URL 是必需的",
     "fileNotFound": "文件未找到",
-    "serverError": "服务器错误"
+    "serverError": "服务器错误",
+    "cannotReadHomePage": "无法读取首页文件",
+    "usingDefaultWelcome": "将使用默认欢迎页面"
   }
 }

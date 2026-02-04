@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 - PowerWiki</title>
+    <title id="pageTitle">管理后台 - PowerWiki</title>
     <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -362,7 +362,7 @@
                             <path d="M8 2v4l2-2M8 14v-4l-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M2 8a6 6 0 0 1 6-6c2.5 0 4.7 1.5 5.7 3.7M14 8a6 6 0 0 1-6 6c-2.5 0-4.7-1.5-5.7-3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        刷新
+                        <span>刷新</span>
                     </button>
                 </div>
                 
@@ -380,8 +380,16 @@
                         <div class="stat-card-value" id="totalIPs">-</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-title">访问记录</div>
-                        <div class="stat-card-value" id="totalRecords">-</div>
+                        <div class="stat-card-title">回访用户</div>
+                        <div class="stat-card-value" id="returningUsers">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">用户留存率</div>
+                        <div class="stat-card-value" id="retentionRate">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">平均访问深度</div>
+                        <div class="stat-card-value" id="avgDepth">-</div>
                     </div>
                 </div>
                 
@@ -410,17 +418,42 @@
                     </div>
                     
                     <div class="chart-container">
+                        <div class="chart-title">📱 设备类型分布</div>
+                        <div class="chart-wrapper">
+                            <canvas id="deviceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">🔗 访问来源分析</div>
+                        <div class="chart-wrapper">
+                            <canvas id="referrerChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">📊 用户访问深度</div>
+                        <div class="chart-wrapper">
+                            <canvas id="depthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
                         <div class="chart-title">📅 一周访问分布</div>
                         <div class="chart-wrapper">
                             <canvas id="weekdayChart"></canvas>
                         </div>
                     </div>
-                </div>
-                
-                <div class="chart-container">
-                    <div class="chart-title">🔥 最受欢迎文章（Top 10）</div>
-                    <div class="chart-wrapper">
-                        <canvas id="popularPostsChart"></canvas>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">🔥 最受欢迎文章（Top 10）</div>
+                        <div class="chart-wrapper">
+                            <canvas id="popularPostsChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
@@ -441,7 +474,7 @@
                             </thead>
                             <tbody id="ipTableBody">
                                 <tr>
-                                    <td colspan="5" class="loading">加载中...</td>
+                                    <td colspan="5" class="loading">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -463,7 +496,7 @@
                             </thead>
                             <tbody id="postTableBody">
                                 <tr>
-                                    <td colspan="3" class="loading">加载中...</td>
+                                    <td colspan="3" class="loading">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -492,7 +525,7 @@
                             </thead>
                             <tbody id="logTableBody">
                                 <tr>
-                                    <td colspan="4" class="loading">加载中...</td>
+                                    <td colspan="4" class="loading">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -504,7 +537,154 @@
     </div>
     
     <script>
-        let dateChart, hourChart, browserChart, weekdayChart, popularPostsChart;
+        // 国际化支持 - 由服务器端设置
+        const LANG = 'zh-CN'; // 将被服务器替换
+        
+        const i18n = {
+            'zh-CN': {
+                pageTitle: '管理后台 - PowerWiki',
+                statsTitle: '📊 访问统计',
+                statsDesc: '实时监控网站访问情况和流量数据',
+                refresh: '刷新',
+                totalViews: '总访问量',
+                totalPosts: '总文章数',
+                totalIPs: '独立IP',
+                totalRecords: '访问记录',
+                returningUsers: '回访用户',
+                retentionRate: '用户留存率',
+                avgDepth: '平均访问深度',
+                dateChart: '📈 最近30天访问趋势',
+                hourChart: '⏰ 24小时访问分布',
+                browserChart: '🌐 浏览器分布',
+                deviceChart: '📱 设备类型分布',
+                referrerChart: '🔗 访问来源分析',
+                depthChart: '📊 用户访问深度',
+                weekdayChart: '📅 一周访问分布',
+                popularPosts: '🔥 最受欢迎文章（Top 10）',
+                ipStats: '🌐 IP访问统计（Top 10）',
+                postStats: '📄 文章访问统计（Top 10）',
+                recentLogs: '🕐 最近访问记录',
+                ipAddress: 'IP地址',
+                visitCount: '访问次数',
+                postCount: '访问文章数',
+                firstVisit: '首次访问',
+                lastVisit: '最后访问',
+                postPath: '文章路径',
+                uniqueIPs: '独立IP数',
+                time: '时间',
+                browser: '浏览器',
+                loading: '加载中...',
+                loadFailed: '加载失败',
+                noData: '暂无数据',
+                collapse: '收起',
+                expand: '展开',
+                visits: '访问量',
+                unknown: '未知',
+                shallow: '浅度访问',
+                medium: '中度访问',
+                deep: '深度访问'
+            },
+            'en': {
+                pageTitle: 'Admin Dashboard - PowerWiki',
+                statsTitle: '📊 Access Statistics',
+                statsDesc: 'Real-time monitoring of website traffic and access data',
+                refresh: 'Refresh',
+                totalViews: 'Total Views',
+                totalPosts: 'Total Posts',
+                totalIPs: 'Unique IPs',
+                totalRecords: 'Access Records',
+                returningUsers: 'Returning Users',
+                retentionRate: 'Retention Rate',
+                avgDepth: 'Avg Visit Depth',
+                dateChart: '📈 30-Day Access Trend',
+                hourChart: '⏰ 24-Hour Distribution',
+                browserChart: '🌐 Browser Distribution',
+                deviceChart: '📱 Device Type Distribution', 
+                referrerChart: '🔗 Traffic Source Analysis',
+                depthChart: '📊 User Visit Depth',
+                weekdayChart: '📅 Weekly Distribution',
+                popularPosts: '🔥 Most Popular Posts (Top 10)',
+                ipStats: '🌐 IP Access Statistics (Top 10)',
+                postStats: '📄 Post Access Statistics (Top 10)',
+                recentLogs: '🕐 Recent Access Logs',
+                ipAddress: 'IP Address',
+                visitCount: 'Visit Count',
+                postCount: 'Posts Visited',
+                firstVisit: 'First Visit',
+                lastVisit: 'Last Visit',
+                postPath: 'Post Path',
+                uniqueIPs: 'Unique IPs',
+                time: 'Time',
+                browser: 'Browser',
+                loading: 'Loading...',
+                loadFailed: 'Load Failed',
+                noData: 'No Data',
+                collapse: 'Collapse',
+                expand: 'Expand',
+                visits: 'Visits',
+                unknown: 'Unknown',
+                shallow: 'Shallow',
+                medium: 'Medium',
+                deep: 'Deep'
+            }
+        };
+        
+        function t(key) {
+            return i18n[LANG]?.[key] || i18n['zh-CN'][key] || key;
+        }
+        
+        // 更新页面语言
+        function updatePageLanguage() {
+            document.getElementById('pageTitle').textContent = t('pageTitle');
+            document.querySelector('.admin-header h1').textContent = t('statsTitle');
+            document.querySelector('.admin-header p').textContent = t('statsDesc');
+            document.querySelector('.refresh-btn span').textContent = t('refresh');
+            
+            // 更新统计卡片标题
+            const statTitles = document.querySelectorAll('.stat-card-title');
+            statTitles[0].textContent = t('totalViews');
+            statTitles[1].textContent = t('totalPosts');
+            statTitles[2].textContent = t('totalIPs');
+            statTitles[3].textContent = t('returningUsers');
+            statTitles[4].textContent = t('retentionRate');
+            statTitles[5].textContent = t('avgDepth');
+            
+            // 更新图表标题
+            document.querySelectorAll('.chart-title')[0].textContent = t('dateChart');
+            document.querySelectorAll('.chart-title')[1].textContent = t('hourChart');
+            document.querySelectorAll('.chart-title')[2].textContent = t('browserChart');
+            document.querySelectorAll('.chart-title')[3].textContent = t('deviceChart');
+            document.querySelectorAll('.chart-title')[4].textContent = t('referrerChart');
+            document.querySelectorAll('.chart-title')[5].textContent = t('depthChart');
+            document.querySelectorAll('.chart-title')[6].textContent = t('weekdayChart');
+            document.querySelectorAll('.chart-title')[7].textContent = t('popularPosts');
+            
+            // 更新表格标题
+            document.querySelectorAll('.table-header h2')[0].textContent = t('ipStats');
+            document.querySelectorAll('.table-header h2')[1].textContent = t('postStats');
+            document.querySelectorAll('.table-header h2')[2].textContent = t('recentLogs');
+            
+            // 更新表头
+            const ipHeaders = document.querySelectorAll('#ipTable th');
+            ipHeaders[0].textContent = t('ipAddress');
+            ipHeaders[1].textContent = t('visitCount');
+            ipHeaders[2].textContent = t('postCount');
+            ipHeaders[3].textContent = t('firstVisit');
+            ipHeaders[4].textContent = t('lastVisit');
+            
+            const postHeaders = document.querySelectorAll('#postTable th');
+            postHeaders[0].textContent = t('postPath');
+            postHeaders[1].textContent = t('visitCount');
+            postHeaders[2].textContent = t('uniqueIPs');
+            
+            const logHeaders = document.querySelectorAll('#logTable th');
+            logHeaders[0].textContent = t('time');
+            logHeaders[1].textContent = t('ipAddress');
+            logHeaders[2].textContent = t('postPath');
+            logHeaders[3].textContent = t('browser');
+        }
+        
+        let dateChart, hourChart, browserChart, weekdayChart, popularPostsChart, deviceChart, referrerChart, depthChart;
         
         async function loadAdminData() {
             try {
@@ -513,7 +693,7 @@
                     cache: 'no-store'
                 });
                 if (!response.ok) {
-                    throw new Error('获取统计数据失败');
+                    throw new Error(t('loadFailed'));
                 }
                 const data = await response.json();
                 
@@ -521,7 +701,9 @@
                 document.getElementById('totalViews').textContent = data.summary.totalViews.toLocaleString();
                 document.getElementById('totalPosts').textContent = data.summary.totalPosts.toLocaleString();
                 document.getElementById('totalIPs').textContent = data.summary.totalIPs.toLocaleString();
-                document.getElementById('totalRecords').textContent = data.summary.totalRecords.toLocaleString();
+                document.getElementById('returningUsers').textContent = data.summary.returningUsers.toLocaleString();
+                document.getElementById('retentionRate').textContent = data.summary.retentionRate + '%';
+                document.getElementById('avgDepth').textContent = data.summary.avgDepth;
                 
                 // 渲染日期图表
                 renderDateChart(data.dateChart);
@@ -532,6 +714,21 @@
                 // 渲染浏览器图表
                 if (data.browserChart) {
                     renderBrowserChart(data.browserChart);
+                }
+                
+                // 渲染设备类型图表
+                if (data.deviceChart) {
+                    renderDeviceChart(data.deviceChart);
+                }
+                
+                // 渲染访问来源图表
+                if (data.referrerChart) {
+                    renderReferrerChart(data.referrerChart);
+                }
+                
+                // 渲染访问深度图表
+                if (data.depthChart) {
+                    renderDepthChart(data.depthChart);
                 }
                 
                 // 渲染星期图表
@@ -556,7 +753,7 @@
             } catch (error) {
                 console.error('加载数据失败:', error);
                 document.querySelectorAll('.loading').forEach(el => {
-                    el.textContent = '加载失败';
+                    el.textContent = LANG === 'en' ? 'Load Failed' : '加载失败';
                     el.className = 'error';
                 });
             }
@@ -888,7 +1085,7 @@
         function renderIPTable(data) {
             const tbody = document.getElementById('ipTableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="loading">暂无数据</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="5" class="loading">${t('noData')}</td></tr>`;
                 return;
             }
             
@@ -906,7 +1103,7 @@
         function renderPostTable(data) {
             const tbody = document.getElementById('postTableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="loading">暂无数据</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="3" class="loading">${t('noData')}</td></tr>`;
                 return;
             }
             
@@ -922,7 +1119,7 @@
         function renderLogTable(data) {
             const tbody = document.getElementById('logTableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无数据</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="4" class="loading">${t('noData')}</td></tr>`;
                 return;
             }
             
@@ -931,7 +1128,7 @@
                     <td>${formatDateTime(log.timestamp)}</td>
                     <td class="ip-cell">${log.ip}</td>
                     <td>${log.filePath}</td>
-                    <td>${log.browser || '未知'}</td>
+                    <td>${log.browser || t('unknown')}</td>
                 </tr>
             `).join('');
         }
@@ -984,7 +1181,7 @@
                 container.classList.toggle('collapsed');
                 const toggle = container.querySelector('.table-toggle span');
                 if (toggle) {
-                    toggle.textContent = container.classList.contains('collapsed') ? '展开' : '收起';
+                    toggle.textContent = container.classList.contains('collapsed') ? t('expand') : t('collapse');
                 }
             }
         }
@@ -1014,6 +1211,7 @@
         
         // 页面加载时初始化
         window.addEventListener('DOMContentLoaded', () => {
+            updatePageLanguage();
             loadConfig();
             loadAdminData();
             
@@ -1026,6 +1224,112 @@
             // 每30秒自动刷新数据
             setInterval(loadAdminData, 30000);
         });
+        
+        // 新增图表渲染函数
+        function renderDeviceChart(data) {
+            const ctx = document.getElementById('deviceChart').getContext('2d');
+            
+            if (deviceChart) {
+                deviceChart.destroy();
+            }
+            
+            const colors = ['#3370ff', '#52c41a', '#faad14'];
+            
+            deviceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.device),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderReferrerChart(data) {
+            const ctx = document.getElementById('referrerChart').getContext('2d');
+            
+            if (referrerChart) {
+                referrerChart.destroy();
+            }
+            
+            referrerChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.referrer),
+                    datasets: [{
+                        label: t('visits'),
+                        data: data.map(d => d.count),
+                        backgroundColor: '#3370ff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderDepthChart(data) {
+            const ctx = document.getElementById('depthChart').getContext('2d');
+            
+            if (depthChart) {
+                depthChart.destroy();
+            }
+            
+            const colors = ['#f5222d', '#faad14', '#52c41a'];
+            
+            depthChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => t(d.depth)),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
         
     </script>
 </body>
