@@ -62,12 +62,38 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 获取版本信息用于标签
+      # 获取版本信息用于标签（优先使用上游 Git tag + fork 修改计数）
       - name: Get version info
         if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          # 获取上游的 tags
+          git fetch upstream --tags
+          
+          # 尝试从上游 master 获取最近的 tag
+          UPSTREAM_TAG=$(git describe --tags --abbrev=0 upstream/master 2>/dev/null || echo "")
+          
+          if [ -n "$UPSTREAM_TAG" ]; then
+            # 移除可能的 v 前缀（如 v1.0.0 -> 1.0.0）
+            BASE_VERSION="${UPSTREAM_TAG#v}"
+            echo "上游 tag: $UPSTREAM_TAG -> $BASE_VERSION"
+          else
+            # 如果没有 tag，使用 package.json 中的版本
+            BASE_VERSION=$(node -p "require('./package.json').version")
+            echo "上游无 tag，使用 package.json 版本: $BASE_VERSION"
+          fi
+          
+          # 计算 fork 比上游多的 commit 数量
+          EXTRA_COMMITS=$(git rev-list upstream/master..HEAD --count 2>/dev/null || echo "0")
+          
+          if [ "$EXTRA_COMMITS" -gt 0 ]; then
+            VERSION="${BASE_VERSION}-${EXTRA_COMMITS}"
+            echo "Fork 有 $EXTRA_COMMITS 个额外 commit，版本: $VERSION"
+          else
+            VERSION="$BASE_VERSION"
+            echo "与上游同步，版本: $VERSION"
+          fi
+          
           DATE=$(date +'%Y%m%d')
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
