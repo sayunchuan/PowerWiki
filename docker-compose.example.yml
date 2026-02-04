@@ -6,11 +6,19 @@ services:
     container_name: powerwiki
     ports:
       - "3150:3150"
+    environment:
+      # 环境变量配置
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - GIT_CACHE_DIR=/app/cache
+      - LANG=zh-CN  # 控制台语言：zh-CN 或 en
     volumes:
       # 配置文件（必须提前创建）
       - ./config.json:/app/config.json
       # 统计数据持久化
       - powerwiki-data:/app/data
+      # Git 缓存持久化
+      - powerwiki-cache:/app/cache
     restart: unless-stopped
     # 健康检查
     healthcheck:
@@ -23,3 +31,5 @@ services:
 volumes:
   powerwiki-data:
     name: powerwiki-data
+  powerwiki-cache:
+    name: powerwiki-cache

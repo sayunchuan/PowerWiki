@@ -48,13 +48,20 @@ services:
     image: sayunchuan/powerwiki:latest
     ports:
       - "3150:3150"
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - GIT_CACHE_DIR=/app/cache
+      - LANG=zh-CN
     volumes:
       - ./config.json:/app/config.json
       - powerwiki-data:/app/data
+      - powerwiki-cache:/app/cache
     restart: unless-stopped
 
 volumes:
   powerwiki-data:
+  powerwiki-cache:
 ```
 
 ### Configuration File
@@ -134,13 +141,20 @@ services:
     image: sayunchuan/powerwiki:latest
     ports:
       - "3150:3150"
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - GIT_CACHE_DIR=/app/cache
+      - LANG=zh-CN
     volumes:
       - ./config.json:/app/config.json
       - powerwiki-data:/app/data
+      - powerwiki-cache:/app/cache
     restart: unless-stopped
 
 volumes:
   powerwiki-data:
+  powerwiki-cache:
 ```
 
 ### 配置文件说明
