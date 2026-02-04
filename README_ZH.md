@@ -97,17 +97,23 @@ PowerWiki 支持层次化的文件夹结构来组织文章。文章存储在 Git
 your-wiki-repo/
 ├── README.md              # 首页
 ├── ABOUT.md               # 关于页面
+├── images/                # 全局公共图片（可选）
 ├── 架构设计/              # 分类文件夹（支持中文）
+│   ├── images/            # 分类公共图片
 │   ├── 物模型：IoT设备标准化实践.md
 │   ├── TLS加密算法深度解析.md
 │   └── README.md          # 分类索引页
 ├── 项目实践/               # 另一个分类
+│   ├── images/
 │   ├── OpenResty + Redis 短链接服务系统.md
 │   └── README.md
 └── 音视频/
+    ├── images/
     ├── WebRTC 信令服务详解.md
     └── README.md
 ```
+
+> **提示**：图片可以放在文章同级的 `images` 文件夹中，引用方式为 `![图片描述](images/图片名.png)`
 
 ### 文章 Frontmatter 格式
 
@@ -135,22 +141,6 @@ tags: [标签1, 标签2]
 | `keywords` | 否 | SEO 关键词（逗号分隔） |
 | `tags` | 否 | 文章标签（数组） |
 
-### 本地图片
-
-将图片放在 Markdown 文件相对路径的文件夹中：
-
-```
-your-wiki-repo/
-├── 架构设计/
-│   ├── 物模型/
-│   │   ├── architecture.png
-│   │   └── README.md
-```
-
-在 Markdown 中引用：
-```markdown
-![架构图](architecture.png)
-```
 
 ## 📁 项目结构
 

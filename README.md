@@ -97,17 +97,23 @@ PowerWiki supports organizing articles with a hierarchical folder structure. Art
 your-wiki-repo/
 ├── README.md              # Home page
 ├── ABOUT.md               # About page
+├── images/                # Global public images (optional)
 ├── 架构设计/              # Category folder (Chinese supported)
+│   ├── images/            # Category public images
 │   ├── 物模型：IoT设备标准化实践.md
 │   ├── TLS加密算法深度解析.md
 │   └── README.md          # Category index page
 ├── 项目实践/              # Another category
+│   ├── images/
 │   ├── OpenResty + Redis 短链接服务系统.md
 │   └── README.md
 └── 音视频/
+    ├── images/
     ├── WebRTC 信令服务详解.md
     └── README.md
 ```
+
+> **Tip**: Images can be placed in an `images` folder alongside articles. Reference as `![Image Description](images/image-name.png)`
 
 ### Article Frontmatter Format
 
@@ -135,22 +141,6 @@ tags: [tag1, tag2]
 | `keywords` | No | SEO keywords (comma-separated) |
 | `tags` | No | Article tags (array) |
 
-### Local Images
-
-Place images in a folder relative to your Markdown file:
-
-```
-your-wiki-repo/
-├── 架构设计/
-│   ├── 物模型/
-│   │   ├── architecture.png
-│   │   └── README.md
-```
-
-Reference in Markdown:
-```markdown
-![Architecture](architecture.png)
-```
 
 ## 📁 Project Structure
 
