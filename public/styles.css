@@ -1289,7 +1289,7 @@ body {
   }
 
   .view {
-    padding: 16px 12px;
+    padding: 16px 16px;
     min-height: auto;
   }
 
@@ -1305,6 +1305,7 @@ body {
   .markdown-body {
     font-size: 14px;
     line-height: 1.6;
+    padding: 0 4px; /* 增加文章内容的左右padding */
   }
 
   .markdown-body h1 {
@@ -1369,10 +1370,12 @@ body {
   }
 
   .back-to-top-btn {
-    bottom: 20px;
-    right: 16px;
+    bottom: 70px !important;
+    right: 16px !important;
     width: 40px;
     height: 40px;
+    position: fixed !important;
+    z-index: 1000;
   }
 
   .back-to-top-btn svg {
@@ -1675,11 +1678,12 @@ body {
   }
 
   .view {
-    padding: 12px 8px;
+    padding: 12px 12px;
   }
 
   .markdown-body {
     font-size: 13px;
+    padding: 0 4px; /* 超小屏幕也增加padding */
   }
 
   .markdown-body h1 {
