@@ -840,7 +840,9 @@ app.get('/api/config', async (req, res) => {
     currentYear: new Date().getFullYear(),
     siteTitle: config.siteTitle || config.title,
     totalViews: stats.totalViews || 0,
-    totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+    totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+    footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+    footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
   };
 
   const homeData = {
@@ -1010,11 +1012,7 @@ app.get('/api/stats/detail', (req, res) => {
       ipStats[ip].posts = postCount;
     });
 
-    // 转换 postStats 中的 Set 为数字
-    Object.keys(postStats).forEach(filePath => {
-      postStats[filePath].uniqueIPs = postStats[filePath].uniqueIPs.size;
-    });
-
+    // 转换 postStats 中的 Set 为数字（只执行一次）
     Object.keys(postStats).forEach(filePath => {
       postStats[filePath].uniqueIPs = postStats[filePath].uniqueIPs.size;
     });
@@ -1193,7 +1191,9 @@ app.get('/', async (req, res) => {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
-        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+        footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+        footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
       };
 
       const homeData = {
@@ -1243,8 +1243,16 @@ app.get('/', async (req, res) => {
 app.get('/api/image/*', async (req, res) => {
   try {
     let imagePath = req.params[0];
+    
+    // 处理可能的双重编码
     try {
-      imagePath = decodeURIComponent(imagePath);
+      // 先尝试解码一次
+      let decodedPath = decodeURIComponent(imagePath);
+      // 如果还包含编码字符，再解码一次
+      if (decodedPath.includes('%')) {
+        decodedPath = decodeURIComponent(decodedPath);
+      }
+      imagePath = decodedPath;
     } catch (e) {
       console.warn('图片路径解码失败，使用原始路径:', imagePath);
     }
@@ -1362,7 +1370,9 @@ app.get('/post/*', async (req, res) => {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
-        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+        footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+        footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
       };
 
       const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
