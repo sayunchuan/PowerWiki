@@ -83,15 +83,24 @@ jobs:
             echo "上游无 tag，使用 package.json 版本: $BASE_VERSION"
           fi
           
-          # 计算 fork 比上游多的 commit 数量
-          EXTRA_COMMITS=$(git rev-list upstream/master..HEAD --count 2>/dev/null || echo "0")
+          # 找到最近一次 merge 上游 tag 的 commit，计算从那之后的 commit 数量
+          MERGE_TAG_COMMIT=$(git log --oneline --first-parent --grep="Merge tag" -1 --format="%H" 2>/dev/null || echo "")
+          
+          if [ -n "$MERGE_TAG_COMMIT" ]; then
+            EXTRA_COMMITS=$(git rev-list "$MERGE_TAG_COMMIT"..HEAD --first-parent --count 2>/dev/null || echo "0")
+            echo "最近 merge tag commit: $MERGE_TAG_COMMIT"
+          else
+            # 如果没有 merge tag commit，使用上游 tag 计算
+            EXTRA_COMMITS=$(git rev-list "$UPSTREAM_TAG"..HEAD --first-parent --count 2>/dev/null || echo "0")
+            echo "未找到 merge tag commit，使用上游 tag 计算"
+          fi
           
           if [ "$EXTRA_COMMITS" -gt 0 ]; then
             VERSION="${BASE_VERSION}-${EXTRA_COMMITS}"
             echo "Fork 有 $EXTRA_COMMITS 个额外 commit，版本: $VERSION"
           else
             VERSION="$BASE_VERSION"
-            echo "与上游同步，版本: $VERSION"
+            echo "与上游 tag 同步，版本: $VERSION"
           fi
           
           DATE=$(date +'%Y%m%d')
