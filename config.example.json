@@ -10,8 +10,8 @@
   "siteUrl": "https://ga666666.cn",
   "autoSyncInterval": 180000,
   "footer": {
-    "copyright": "© 2018 - 2026 GA666666 Blog 黑ICP备2021002511号-1",
-    "poweredBy": "Powered by PowerWiki"
+    "copyright": "© 2018 - 2026 GA666666 Blog · <a href=\"https://beian.miit.gov.cn/\" target=\"_blank\" rel=\"noopener\">黑ICP备2021002511号-1</a>",
+    "poweredBy": "Powered by <a href=\"https://github.com/steven-ld/PowerWiki.git\" target=\"_blank\" rel=\"noopener\">PowerWiki</a>"
   },
   "pages": {
     "home": "README.md",

@@ -840,7 +840,9 @@ app.get('/api/config', async (req, res) => {
     currentYear: new Date().getFullYear(),
     siteTitle: config.siteTitle || config.title,
     totalViews: stats.totalViews || 0,
-    totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+    totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+    footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+    footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
   };
 
   const homeData = {
@@ -1189,7 +1191,9 @@ app.get('/', async (req, res) => {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
-        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+        footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+        footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
       };
 
       const homeData = {
@@ -1366,7 +1370,9 @@ app.get('/post/*', async (req, res) => {
         currentYear: new Date().getFullYear(),
         siteTitle: config.siteTitle || config.title,
         totalViews: stats.totalViews || 0,
-        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0
+        totalPosts: stats.postViews ? Object.keys(stats.postViews).length : 0,
+        footerCopyright: config.footer?.copyright || `© ${new Date().getFullYear()} ${config.siteTitle || config.title}`,
+        footerPoweredBy: config.footer?.poweredBy || 'Powered by <a href="https://github.com/steven-ld/PowerWiki.git" target="_blank" rel="noopener">PowerWiki</a>'
       };
 
       const baseUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
