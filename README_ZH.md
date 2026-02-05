@@ -264,31 +264,34 @@ npm run start:zh         # 启动中文版本
 
 ```
 PowerWiki/
-├── server.js              # Express 服务器
-├── config.example.json    # 配置模板
-├── package.json           # 项目依赖
-├── Dockerfile             # Docker 配置
-├── docker-compose.yml     # Docker Compose
-├── docs/                  # 文档目录
-│   ├── DOCKER.md          # Docker 部署指南
-│   └── ENVIRONMENT.md     # 环境变量指南
-├── config/                # 配置模块
-│   ├── env.js             # 环境变量
-│   └── i18n.js            # 国际化
-├── locales/               # 翻译文件
-│   ├── zh-CN.json         # 中文翻译
-│   └── en.json            # 英文翻译
-├── utils/
-│   ├── gitManager.js      # Git 操作模块
-│   └── markdownParser.js  # Markdown 解析模块
-├── templates/
-│   ├── header.html        # 头部模板
-│   ├── footer.html        # 底部模板
-│   └── home.html          # 首页模板
-└── public/
-    ├── index.html         # 前端页面
-    ├── styles.css         # 样式文件
-    └── app.js             # 前端逻辑
+├── src/                     # 源代码
+│   ├── index.js             # Express 服务器入口
+│   ├── routes/              # 路由模块
+│   │   ├── api.js           # API 路由
+│   │   ├── feeds.js         # RSS/Sitemap 路由
+│   │   └── static.js        # 静态文件路由
+│   ├── config/              # 配置模块
+│   │   ├── env.js           # 环境变量
+│   │   └── i18n.js          # 国际化
+│   └── utils/               # 工具模块
+│       ├── cacheManager.js  # 缓存管理
+│       ├── gitManager.js    # Git 操作
+│       └── markdownParser.js# Markdown 解析
+├── locales/                 # 翻译文件
+│   ├── zh-CN.json           # 中文翻译
+│   └── en.json              # 英文翻译
+├── templates/               # HTML 模板
+│   ├── header.html          # 头部模板
+│   ├── footer.html          # 底部模板
+│   └── home.html            # 首页模板
+├── public/                  # 静态资源
+│   ├── index.html           # 前端页面
+│   ├── styles.css           # 样式文件
+│   └── app.js               # 前端逻辑
+├── config.example.json      # 配置模板
+├── package.json             # 项目依赖
+├── Dockerfile               # Docker 配置
+└── docker-compose.yml       # Docker Compose
 ```
 
 ## 🛠️ 技术栈

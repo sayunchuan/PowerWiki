@@ -199,6 +199,30 @@ tags: [태그1, 태그2]
 - **PDF**: pdfjs-dist
 - **컨테이너화**: Docker
 
+## 프로젝트 구조
+
+```
+PowerWiki/
+├── src/                     # 소스 코드
+│   ├── index.js             # Express 서버 진입점
+│   ├── routes/              # 라우트 모듈
+│   │   ├── api.js           # API 라우트
+│   │   ├── feeds.js         # RSS/Sitemap 라우트
+│   │   └── static.js        # 정적 파일 라우트
+│   ├── config/              # 설정 모듈
+│   │   ├── env.js           # 환경 변수
+│   │   └── i18n.js          # 국제화
+│   └── utils/               # 유틸리티 모듈
+│       ├── cacheManager.js  # 캐시 관리
+│       ├── gitManager.js    # Git 작업
+│       └── markdownParser.js# 마크다운 파서
+├── locales/                 # 번역 파일
+├── templates/               # HTML 템플릿
+├── public/                  # 정적 자산
+├── config.example.json      # 설정 템플릿
+└── package.json             # 종속성
+```
+
 ## 라이선스
 
 MIT License - [LICENSE](LICENSE) 참조.

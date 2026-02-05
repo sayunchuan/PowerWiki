@@ -3,7 +3,8 @@
     "starting": "Starting PowerWiki server...",
     "started": "PowerWiki server started",
     "port": "Port",
-    "stopping": "Stopping server..."
+    "stopping": "Stopping server...",
+    "syncFailedButStarted": "{0}, but server has started. Please check Git repository configuration."
   },
   "git": {
     "cloning": "Cloning repository...",
@@ -15,7 +16,6 @@
     "syncComplete": "Repository sync completed",
     "syncFailed": "Repository sync failed",
     "upToDate": "Repository is up to date",
-    "autoSyncFailed": "Auto sync failed",
     "cloneFailed": "Git clone failed, exit code",
     "cloneExecutionFailed": "Git clone execution failed",
     "autoSyncEnabled": "Auto sync enabled",
@@ -25,11 +25,16 @@
     "repository": "repository",
     "branch": "branch",
     "autoSyncInterval": "Auto sync interval",
-    "syncTip": "Tip: If repository sync fails, please check the gitRepo configuration in config file"
+    "syncTip": "Tip: If repository sync fails, please check the gitRepo configuration in config file",
+    "cannotGetCommit": "Cannot get current commit, continue trying to pull...",
+    "operationFailed": "Git operation failed",
+    "cannotGetCreatedTime": "Cannot get Git creation time for file {0}",
+    "cannotGetModifiedTime": "Cannot get Git modification time for file {0}"
   },
   "cache": {
     "clearing": "Clearing cache...",
-    "cleared": "Cache cleared"
+    "cleared": "Cache cleared",
+    "clearedExpiredItems": "Cleared {0} expired cache items"
   },
   "error": {
     "configNotFound": "Configuration file not found",
@@ -37,6 +42,75 @@
     "fileNotFound": "File not found",
     "serverError": "Server error",
     "cannotReadHomePage": "Cannot read homepage file",
-    "usingDefaultWelcome": "Using default welcome page"
+    "usingDefaultWelcome": "Using default welcome page",
+    "templateReadFailed": "Failed to read template {0}",
+    "initRepoFailed": "Repository initialization failed",
+    "initRepoFailedTip": "Please check Git repository URL and network connection",
+    "skipSyncGitOperating": "Skipping sync: Git operation is in progress",
+    "skipSyncNotInitialized": "Skipping sync: Repository not yet initialized",
+    "autoSyncFailed": "Auto sync failed",
+    "readAccessLogFailed": "Failed to read access log",
+    "saveAccessLogFailed": "Failed to save access log",
+    "ssrRenderFailed": "SSR render failed, falling back to normal mode",
+    "postSsrRenderFailed": "Post SSR render failed, falling back to normal mode"
+  },
+  "log": {
+    "accessLog": "Access log"
+  },
+  "static": {
+    "imagePathDecodeFailed": "Image path decode failed, using original path",
+    "imageNotFound": "Image not found",
+    "getImageFailed": "Failed to get image",
+    "pathDecodeFailed": "Path decode failed, using original path",
+    "notPdfFile": "Not a PDF file",
+    "getPdfFailed": "Failed to get PDF",
+    "pdfNotFound": "PDF file not found"
+  },
+  "browser": {
+    "unknown": "Unknown",
+    "wechat": "WeChat Browser",
+    "edge": "Edge",
+    "opera": "Opera",
+    "chrome": "Chrome",
+    "firefox": "Firefox",
+    "safariIos": "Safari (iOS)",
+    "safari": "Safari",
+    "ie": "Internet Explorer",
+    "android": "Android Browser",
+    "crawler": "Crawler",
+    "other": "Other"
+  },
+  "stats": {
+    "readStatsFailed": "Failed to read statistics",
+    "saveStatsFailed": "Failed to save statistics",
+    "getPostsFailed": "Failed to get posts list",
+    "getPostFailed": "Failed to get post",
+    "postNotFound": "Post not found",
+    "readHomePageFailed": "Cannot read homepage",
+    "getAdminStatsFailed": "Failed to get admin statistics",
+    "cacheCleared": "Cache cleared",
+    "allCacheCleared": "All cache cleared"
+  },
+  "weekday": {
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat"
+  },
+  "tip": {
+    "configNotFoundTip": "Tip: You can copy config.example.json to config.json and modify the configuration"
+  },
+  "feed": {
+    "skipArticle": "RSS: Skipping article",
+    "generateRssFailed": "Failed to generate RSS",
+    "generateSitemapFailed": "Failed to generate sitemap"
+  },
+  "markdown": {
+    "highlightError": "Code highlight error",
+    "configMarkedFailed": "Failed to configure marked, using default config",
+    "parseError": "Markdown parse error"
   }
 }

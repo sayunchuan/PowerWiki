@@ -264,31 +264,34 @@ npm run start:zh         # Start with Chinese
 
 ```
 PowerWiki/
-├── server.js              # Express server
-├── config.example.json    # Config template
-├── package.json           # Dependencies
-├── Dockerfile             # Docker configuration
-├── docker-compose.yml     # Docker Compose
-├── docs/                  # Documentation
-│   ├── DOCKER.md          # Docker deployment guide
-│   └── ENVIRONMENT.md     # Environment variables guide
-├── config/                # Configuration modules
-│   ├── env.js             # Environment variables
-│   └── i18n.js            # Internationalization
-├── locales/               # Translation files
-│   ├── zh-CN.json         # Chinese translations
-│   └── en.json            # English translations
-├── utils/
-│   ├── gitManager.js      # Git operations
-│   └── markdownParser.js  # Markdown parser
-├── templates/
-│   ├── header.html        # Header template
-│   ├── footer.html        # Footer template
-│   └── home.html          # Home template
-└── public/
-    ├── index.html         # Frontend HTML
-    ├── styles.css         # Styles
-    └── app.js             # Frontend JS
+├── src/                     # Source code
+│   ├── index.js             # Express server entry
+│   ├── routes/              # Route modules
+│   │   ├── api.js           # API routes
+│   │   ├── feeds.js         # RSS/Sitemap routes
+│   │   └── static.js        # Static file routes
+│   ├── config/              # Configuration
+│   │   ├── env.js           # Environment variables
+│   │   └── i18n.js          # Internationalization
+│   └── utils/               # Utility modules
+│       ├── cacheManager.js  # Cache management
+│       ├── gitManager.js    # Git operations
+│       └── markdownParser.js# Markdown parser
+├── locales/                 # Translation files
+│   ├── zh-CN.json           # Chinese translations
+│   └── en.json              # English translations
+├── templates/               # HTML templates
+│   ├── header.html          # Header template
+│   ├── footer.html          # Footer template
+│   └── home.html            # Home template
+├── public/                  # Static assets
+│   ├── index.html           # Frontend HTML
+│   ├── styles.css           # Styles
+│   └── app.js               # Frontend JS
+├── config.example.json      # Config template
+├── package.json             # Dependencies
+├── Dockerfile               # Docker configuration
+└── docker-compose.yml       # Docker Compose
 ```
 
 ## 🛠️ Tech Stack
