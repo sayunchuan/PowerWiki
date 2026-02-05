@@ -648,6 +648,42 @@ body {
   font-size: 12px;
 }
 
+/* Tag 标签样式 */
+.post-tags {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.tag-item .tag-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Outline 风格 */
+.tag-item {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
+.tag-item:hover {
+  transform: translateY(-1px);
+}
+
 /* ========== Markdown 内容 ========== */
 .markdown-body {
   font-size: 15px;
@@ -1300,6 +1336,16 @@ body {
 
   .post-meta .meta-item {
     font-size: 12px;
+  }
+
+  .post-tags {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tag-item {
+    font-size: 11px;
+    padding: 3px 8px;
   }
 
   .markdown-body {
