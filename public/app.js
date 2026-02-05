@@ -946,6 +946,12 @@ async function loadPost(filePath) {
   } catch (error) {
     console.error('加载文章失败:', error);
     showNotification('加载文章失败: ' + error.message, 'error');
+    // 文章不存在时自动跳转到首页
+    if (error.message === '文章不存在') {
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    }
   }
 }
 

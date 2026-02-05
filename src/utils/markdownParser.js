@@ -10,19 +10,14 @@
 
 const { marked } = require('marked');
 const hljs = require('highlight.js');
+const { t } = require('../config/i18n');
 
-/**
- * 代码高亮函数
- * @param {string} code - 代码内容
- * @param {string} lang - 编程语言
- * @returns {string} 高亮后的 HTML
- */
 const highlightCode = function(code, lang) {
   if (lang && hljs.getLanguage(lang)) {
     try {
       return hljs.highlight(code, { language: lang }).value;
     } catch (err) {
-      console.error('代码高亮错误:', err);
+      console.error(`❌ ${t('markdown.highlightError')}:`, err);
     }
   }
   return hljs.highlightAuto(code).value;
@@ -44,14 +39,9 @@ try {
     });
   }
 } catch (err) {
-  console.warn('配置 marked 失败，使用默认配置:', err);
+  console.warn(`⚠️  ${t('markdown.configMarkedFailed')}:`, err);
 }
 
-/**
- * 解析 YAML Frontmatter
- * @param {string} markdown - Markdown 内容
- * @returns {Object} { frontmatter: Object, content: string }
- */
 function parseFrontmatter(markdown) {
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
   const match = markdown.match(frontmatterRegex);
@@ -67,7 +57,6 @@ function parseFrontmatter(markdown) {
   const content = match[2];
   const frontmatter = {};
 
-  // 解析 YAML (简单实现)
   const lines = frontmatterText.split('\n');
   for (const line of lines) {
     const colonIndex = line.indexOf(':');
@@ -75,7 +64,6 @@ function parseFrontmatter(markdown) {
       const key = line.substring(0, colonIndex).trim();
       let value = line.substring(colonIndex + 1).trim();
 
-      // 处理数组 [tag1, tag2]
       if (value.startsWith('[') && value.endsWith(']')) {
         value = value.substring(1, value.length - 1)
           .split(',')
@@ -93,7 +81,6 @@ function parseFrontmatter(markdown) {
   };
 }
 
-// 提取标题
 function extractTitle(markdown) {
   const lines = markdown.split('\n');
   for (const line of lines) {
@@ -104,7 +91,6 @@ function extractTitle(markdown) {
   return '无标题';
 }
 
-// 提取描述（第一段文字）
 function extractDescription(markdown) {
   const lines = markdown.split('\n');
   for (const line of lines) {
@@ -116,57 +102,78 @@ function extractDescription(markdown) {
   return '';
 }
 
-/**
- * 转换 Markdown 中的本地图片路径
- * 将 ![](images/xxx.png) 转换为 ![](/api/image/路径/images/xxx.png)
- * @param {string} markdown - Markdown 内容
- * @param {string} filePath - 当前 markdown 文件路径
- * @returns {string} 转换后的 Markdown
- */
 function transformLocalImagePaths(markdown, filePath) {
-  // 计算 md 文件所在目录
   const lastSlashIndex = filePath.lastIndexOf('/');
   const mdDir = lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : '';
 
-  // 匹配 ![xxx](images/yyy.png) 或 ![xxx](./images/yyy.png) 或 ![xxx](../images/yyy.png)
-  // 转换为 ![xxx](/api/image/路径/images/yyy.png)
-  return markdown.replace(/!\[([^\]]*)\]\((images[^)]*)\)/g, (match, alt, imagePath) => {
-    // 移除 imagePath 开头的 ./ 或 ./
-    const cleanImagePath = imagePath.replace(/^\.?\//, '');
-    const apiPath = mdDir ? `/api/image/${mdDir}/${cleanImagePath}` : `/api/image/${cleanImagePath}`;
+  // 匹配所有本地图片路径：
+  // - ./image/xxx.png
+  // - ../image/xxx.png
+  // - /image/xxx.png
+  // - images/xxx.png
+  // 支持常见图片格式：png, jpg, jpeg, gif, webp, svg, ico
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+\.(?:png|jpg|jpeg|gif|webp|svg|ico))\)/gi;
+
+  return markdown.replace(imageRegex, (match, alt, imagePath) => {
+    // 跳过绝对 URL（http://, https://, //）
+    if (/^(https?:)?\/\//i.test(imagePath)) {
+      return match;
+    }
+
+    // 清理路径：移除开头的 ./ 或 /
+    const cleanImagePath = imagePath.replace(/^\.\.?[\/\\]/, '').replace(/^\/+/, '');
+
+    // 处理 ../ 返回上一级目录的情况
+    let resolvedPath = cleanImagePath;
+    const parentRefs = (imagePath.match(/\.\.\//g) || []).length;
+
+    if (parentRefs > 0 && mdDir) {
+      // 将 ../ 路径转换为基于 mdDir 的正确路径
+      let newMdDir = mdDir;
+      for (let i = 0; i < parentRefs; i++) {
+        const lastSlash = newMdDir.lastIndexOf('/');
+        if (lastSlash !== -1) {
+          newMdDir = newMdDir.substring(0, lastSlash);
+        } else {
+          newMdDir = '';
+          break;
+        }
+      }
+      // 获取 ../ 后面的路径部分
+      const afterRefs = imagePath.replace(/^\.?\.?[\/\\]+/, '');
+      resolvedPath = newMdDir ? `${newMdDir}/${afterRefs}` : afterRefs;
+    } else if (mdDir && !imagePath.startsWith('/')) {
+      // 普通相对路径（如 ./images/xxx.png 或 images/xxx.png），基于 mdDir
+      resolvedPath = `${mdDir}/${cleanImagePath}`;
+    }
+
+    const apiPath = `/api/image/${resolvedPath}`;
     return `![${alt}](${apiPath})`;
   });
 }
 
-// 解析 Markdown
-// @param {string} markdown - Markdown 内容
-// @param {string} filePath - 可选，markdown 文件路径，用于转换本地图片路径
 function parseMarkdown(markdown, filePath = '') {
-  // 先解析 Frontmatter
   const { frontmatter, content } = parseFrontmatter(markdown);
 
-  // 转换本地图片路径（如果有 filePath）
   let processedContent = content;
   if (filePath) {
     processedContent = transformLocalImagePaths(content, filePath);
   }
 
   let html;
-  // 兼容不同版本的 marked (只解析内容部分，不包含 Frontmatter)
   try {
     if (typeof marked.parse === 'function') {
       html = marked.parse(processedContent);
     } else if (typeof marked === 'function') {
       html = marked(content);
     } else {
-      html = processedContent; // 降级处理
+      html = processedContent;
     }
   } catch (err) {
-    console.error('Markdown 解析错误:', err);
+    console.error(`❌ ${t('markdown.parseError')}:`, err);
     html = processedContent;
   }
 
-  // 优先使用 Frontmatter 中的信息，否则从内容中提取
   const title = frontmatter.title || extractTitle(content);
   const description = frontmatter.description || extractDescription(content);
   const keywords = frontmatter.keywords || '';
@@ -179,7 +186,7 @@ function parseMarkdown(markdown, filePath = '') {
     keywords,
     tags,
     frontmatter,
-    raw: content  // 返回不含 Frontmatter 的原始内容
+    raw: content
   };
 }
 
@@ -189,4 +196,3 @@ module.exports = {
   extractDescription,
   transformLocalImagePaths
 };
-

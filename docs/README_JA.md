@@ -199,6 +199,30 @@ tags: [タグ1, タグ2]
 - **PDF**: pdfjs-dist
 - **コンテナ化**: Docker
 
+## プロジェクト構造
+
+```
+PowerWiki/
+├── src/                     # ソースコード
+│   ├── index.js             # Express サーバーエントリポイント
+│   ├── routes/              # ルーターモジュール
+│   │   ├── api.js           # API ルーター
+│   │   ├── feeds.js         # RSS/Sitemap ルーター
+│   │   └── static.js        # 静的ファイルルーター
+│   ├── config/              # 設定モジュール
+│   │   ├── env.js           # 環境変数
+│   │   └── i18n.js          # 国際化
+│   └── utils/               # ユーティリティモジュール
+│       ├── cacheManager.js  # キャッシュ管理
+│       ├── gitManager.js    # Git 操作
+│       └── markdownParser.js# Markdown パーサー
+├── locales/                 # 翻訳ファイル
+├── templates/               # HTML テンプレート
+├── public/                  # 静的アセット
+├── config.example.json      # 設定テンプレート
+└── package.json             # 依存関係
+```
+
 ## ライセンス
 
 MIT License - [LICENSE](LICENSE) をご覧ください。
