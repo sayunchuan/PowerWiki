@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const { t } = require('../../config/i18n');
 
 function loadConfig() {
   try {
     const config = require(path.join(__dirname, '../../config.json'));
 
     if (!config.gitRepo) {
-      console.error('❌ 配置错误: gitRepo 是必需的');
+      console.error(t('error.configError'));
       process.exit(1);
     }
 
@@ -16,8 +17,8 @@ function loadConfig() {
 
     return config;
   } catch (error) {
-    console.error('❌ 配置文件加载失败，请确保 config.json 文件存在');
-    console.error('💡 提示: 可以复制 config.example.json 为 config.json 并修改配置');
+    console.error(t('error.configLoadFailed'));
+    console.error(t('error.configCopyTip'));
     process.exit(1);
   }
 }

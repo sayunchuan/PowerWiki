@@ -5,6 +5,7 @@ const { parseMarkdown } = require('../../utils/markdownParser');
 const seoHelper = require('../../utils/seoHelper');
 const { readStats } = require('../services/statsService');
 const { readTemplate, renderTemplate } = require('../services/templateService');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -143,7 +144,7 @@ router.get('/*', async (req, res) => {
                                 <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/>
                                 <path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                             </svg>
-                            <span>更新时间：${new Date(fileInfo.modified).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span>${t('content.updatedTime')}: ${new Date(fileInfo.modified).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -158,7 +159,7 @@ router.get('/*', async (req, res) => {
       res.send(html);
       return;
     } catch (error) {
-      console.error('文章 SSR 渲染失败，回退到普通模式:', error);
+      console.error(t('error.ssrRenderFailed'), error.message);
     }
   }
 

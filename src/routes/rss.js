@@ -3,6 +3,7 @@ const router = express.Router();
 const cacheManager = require('../../utils/cacheManager');
 const { parseMarkdown } = require('../../utils/markdownParser');
 const seoHelper = require('../../utils/seoHelper');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
     rss += '  <channel>\n';
     rss += `    <title>${config.siteTitle || 'PowerWiki'}</title>\n`;
     rss += `    <link>${baseUrl}</link>\n`;
-    rss += `    <description>${config.siteDescription || 'PowerWiki - 一个现代化的知识库系统'}</description>\n`;
+    rss += `    <description>${config.siteDescription || t('content.knowledgeBaseDesc')}</description>\n`;
     rss += `    <language>zh-CN</language>\n`;
     rss += `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n`;
     rss += `    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml" />\n`;
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
         const parsed = parseMarkdown(content);
         const fileInfo = await gitManager.getFileInfo(file.path);
         const fileName = fileInfo.name.replace(/\.(md|markdown)$/i, '');
-        const title = fileName || parsed.title || '文章';
+        const title = fileName || parsed.title || t('content.article');
 
         const optimizedHtml = seoHelper.optimizeImageTags(parsed.html, title);
         const description = seoHelper.generateDescription(optimizedHtml, title, 300);
@@ -66,7 +67,7 @@ router.get('/', async (req, res) => {
 
         rss += '    </item>\n';
       } catch (error) {
-        console.warn(`RSS: 跳过文章 ${file.path}:`, error.message);
+        console.warn(t('error.rssSkipPost', file.path, error.message));
       }
     }
 
@@ -78,8 +79,8 @@ router.get('/', async (req, res) => {
     res.setHeader('Content-Type', 'application/xml');
     res.send(rss);
   } catch (error) {
-    console.error('生成 RSS 失败:', error);
-    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>生成 RSS 失败</error>');
+    console.error(t('error.rssGenFailed'), error.message);
+    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>' + t('error.rssGenFailed') + '</error>');
   }
 });
 

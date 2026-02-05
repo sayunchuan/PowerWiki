@@ -3,7 +3,19 @@
     "starting": "正在启动 PowerWiki 服务器...",
     "started": "PowerWiki 服务器已启动",
     "port": "端口",
-    "stopping": "正在停止服务器..."
+    "stopping": "正在停止服务器...",
+    "configLoaded": "配置文件已加载",
+    "configLoadError": "配置文件加载失败",
+    "error": "服务器错误",
+    "pageNotFound": "页面未找到",
+    "siteTitle": "网站标题",
+    "url": "服务器地址",
+    "dataDir": "数据目录",
+    "cacheDir": "缓存目录",
+    "ready": "服务器已就绪",
+    "disabled": "已禁用",
+    "startError": "服务器启动失败",
+    "shutdown": "服务器已关闭"
   },
   "git": {
     "cloning": "正在克隆仓库...",
@@ -22,21 +34,23 @@
     "interval": "间隔",
     "seconds": "秒",
     "minutes": "分钟",
-    "repository": "仓库",
+    "repository": "Git 仓库",
     "branch": "分支",
     "autoSyncInterval": "自动同步间隔",
-    "syncTip": "提示: 如果仓库同步失败，请检查配置文件中的 gitRepo 配置"
+    "syncTip": "提示: 如果仓库同步失败，请检查配置文件中的 gitRepo 配置",
+    "syncingRepo": "正在同步 Git 仓库...",
+    "repoUpdated": "仓库已更新！",
+    "initializing": "正在初始化仓库",
+    "initialized": "仓库初始化完成",
+    "initError": "仓库初始化失败",
+    "autoSync": "自动同步",
+    "autoSyncStart": "开始自动同步",
+    "autoSyncSuccess": "自动同步完成",
+    "autoSyncError": "自动同步失败"
   },
-  "cache": {
-    "clearing": "正在清理缓存...",
-    "cleared": "缓存已清理"
-  },
-  "error": {
-    "configNotFound": "配置文件未找到",
-    "gitRepoRequired": "Git 仓库 URL 是必需的",
-    "fileNotFound": "文件未找到",
-    "serverError": "服务器错误",
-    "cannotReadHomePage": "无法读取首页文件",
-    "usingDefaultWelcome": "将使用默认欢迎页面"
+  "stats": {
+    "readStatsFailed": "读取统计数据失败",
+    "saveStatsFailed": "保存统计数据失败",
+    "saveLogFailed": "记录访问日志失败"
   }
 }

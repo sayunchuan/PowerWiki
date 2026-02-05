@@ -5,6 +5,7 @@ const { parseMarkdown } = require('../../utils/markdownParser');
 const seoHelper = require('../../utils/seoHelper');
 const { readStats } = require('../services/statsService');
 const { readTemplate, renderTemplate } = require('../services/templateService');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -37,7 +38,7 @@ router.get('/', async (req, res) => {
           const parsed = parseMarkdown(content);
           homeContent = {
             html: parsed.html,
-            title: parsed.title || '首页',
+            title: parsed.title || t('content.home'),
             path: homePagePath
           };
         } catch (error) {}
@@ -68,9 +69,9 @@ router.get('/', async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || '知识库'}</title>
-    <meta name="description" content="${config.siteDescription || 'PowerWiki - 一个现代化的知识库系统'}">
-    <meta name="keywords" content="知识库,文档,Markdown,Wiki">
+    <title>${config.siteTitle || 'PowerWiki'} - ${config.siteDescription || t('content.knowledgeBase')}</title>
+    <meta name="description" content="${config.siteDescription || t('content.knowledgeBaseDesc')}">
+    <meta name="keywords" content="${t('content.knowledgeBase')},${t('content.document')},Markdown,Wiki">
     <link rel="canonical" href="${config.siteUrl || `${req.protocol}://${req.get('host')}`}">
     <link rel="alternate" type="application/rss+xml" title="${config.siteTitle || 'PowerWiki'} RSS Feed" href="${config.siteUrl || `${req.protocol}://${req.get('host')}`}/rss.xml">
     <link rel="stylesheet" href="/styles.css">
@@ -92,7 +93,7 @@ router.get('/', async (req, res) => {
       res.send(html);
       return;
     } catch (error) {
-      console.error('SSR 渲染失败，回退到普通模式:', error);
+      console.error(t('error.ssrRenderFailed'), error.message);
     }
   }
 

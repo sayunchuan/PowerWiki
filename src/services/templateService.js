@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
+const { t } = require('../../config/i18n');
 
 function readTemplate(templateName) {
   try {
@@ -8,7 +9,7 @@ function readTemplate(templateName) {
       return fs.readFileSync(templatePath, 'utf-8');
     }
   } catch (error) {
-    console.error(`读取模板 ${templateName} 失败:`, error);
+    console.error(t('error.readTemplateFailed', templateName, error.message));
   }
   return '';
 }

@@ -3,6 +3,7 @@ const router = express.Router();
 const cacheManager = require('../../utils/cacheManager');
 const { parseMarkdown } = require('../../utils/markdownParser');
 const seoHelper = require('../../utils/seoHelper');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -81,8 +82,8 @@ router.get('/', async (req, res) => {
     res.setHeader('Content-Type', 'application/xml');
     res.send(sitemap);
   } catch (error) {
-    console.error('生成 sitemap 失败:', error);
-    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>生成 sitemap 失败</error>');
+    console.error(t('error.sitemapGenFailed'), error.message);
+    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>' + t('error.sitemapGenFailed') + '</error>');
   }
 });
 

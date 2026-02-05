@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
+const { t } = require('../../config/i18n');
 
 const statsFilePath = path.join(__dirname, '../../.stats.json');
 const accessLogFilePath = path.join(__dirname, '../../.access-log.json');
@@ -11,7 +12,7 @@ function readStats() {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error('读取统计数据失败:', error);
+    console.error(t('error.readStatsFailed', error.message));
   }
   return {
     totalViews: 0,
@@ -23,7 +24,7 @@ function saveStats(stats) {
   try {
     fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2), 'utf-8');
   } catch (error) {
-    console.error('保存统计数据失败:', error);
+    console.error(t('error.saveStatsFailed', error.message));
   }
 }
 
@@ -34,7 +35,7 @@ function readAccessLog() {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error('读取访问日志失败:', error);
+    console.error(t('error.readLogFailed', error.message));
   }
   return [];
 }
@@ -45,7 +46,7 @@ function saveAccessLog(log) {
     const trimmedLog = log.slice(-maxRecords);
     fs.writeFileSync(accessLogFilePath, JSON.stringify(trimmedLog, null, 2), 'utf-8');
   } catch (error) {
-    console.error('保存访问日志失败:', error);
+    console.error(t('error.saveLogFailed', error.message));
   }
 }
 
@@ -60,13 +61,13 @@ function getClientIP(req) {
 
 function parseBrowser(userAgent) {
   if (!userAgent || userAgent === 'unknown') {
-    return '未知';
+    return t('browser.unknown');
   }
 
   const ua = userAgent.toLowerCase();
 
   if (ua.includes('micromessenger')) {
-    return '微信浏览器';
+    return t('browser.wechat');
   }
 
   if (ua.includes('edg') || (ua.includes('edge') && !ua.includes('edgechromium'))) {
@@ -98,15 +99,15 @@ function parseBrowser(userAgent) {
 
   if (ua.includes('mobile')) {
     if (ua.includes('android')) {
-      return 'Android 浏览器';
+      return t('browser.android');
     }
   }
 
   if (ua.includes('bot') || ua.includes('crawler') || ua.includes('spider')) {
-    return '爬虫';
+    return t('browser.crawler');
   }
 
-  return '其他';
+  return t('browser.other');
 }
 
 function recordPostView(filePath, req) {
