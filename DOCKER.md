@@ -12,24 +12,40 @@ This Docker image is based on [PowerWiki](https://github.com/steven-ld/PowerWiki
 
 A modern Git-based Markdown wiki system with auto-sync, syntax highlighting, and Feishu-style UI.
 
-### Supported Tags
+### Image Version Types
+
+This repository provides two types of Docker images:
+
+**1. Upstream Version (Auto-published from master branch)**
 
 | Tag | Description |
 |-----|-------------|
-| `latest` | Latest build, always up-to-date |
-| `1.2.0` | Synced with upstream tag v1.2.0 |
-| `1.2.0-5` | Based on v1.2.0 + 5 additional commits |
-| `20260204` | Build date (YYYYMMDD) |
-| `20260204-abc1234` | Build date + commit SHA |
+| `latest` | Most recently published image |
+| `1.2.0` | Exactly synced with upstream v1.2.0 |
+| `20260205` | Build date (YYYYMMDD) |
 
-**Version Format:** `{upstream_version}` or `{upstream_version}-{commits}`
+**2. Fork Version (Manual-published from docker branch)**
 
-- `1.2.0` — Exactly synced with upstream release v1.2.0
-- `1.2.0-5` — Based on v1.2.0, with 5 commits after merging the tag (bug fixes, Docker improvements, etc.)
+| Tag | Description |
+|-----|-------------|
+| `latest` | Most recently published image |
+| `1.2.0-f1` | Based on upstream 1.2.0, 1st local modification |
+| `1.2.0-f1-3` | Based on 1.2.0-f1 tag + 3 additional commits |
+| `20260205-fork` | Fork version build date |
+
+> Note: `latest` tag always points to the most recently published image, regardless of whether it's an upstream or fork version.
+
+**Version Format:**
+
+- `X.Y.Z` — Exactly synced with upstream release vX.Y.Z
+- `X.Y.Z-fN` — Based on upstream X.Y.Z, Nth local modification release
+- `X.Y.Z-fN-M` — Based on X.Y.Z-fN tag, with M additional commits
+
+**f = fork**, indicating local modifications (bug fixes, enhancements, etc.)
 
 **Recommended:**
-- Production: Use specific version like `1.2.0` or `1.2.0-5`
-- Development: Use `latest` for newest features
+- Need latest upstream features: Use `latest` or specific version like `1.2.0`
+- Need local fixes/enhancements: Use `fork-latest` or specific version like `1.2.0-f1`
 
 ### Quick Start
 
@@ -124,24 +140,40 @@ Create config.json:
 
 一个现代化的基于 Git 的 Markdown 知识库系统，支持自动同步、语法高亮和飞书风格界面。
 
-### 镜像标签
+### 镜像版本类型
+
+本仓库提供两种类型的 Docker 镜像：
+
+**1. 纯上游版本（自动发布，来自 master 分支）**
 
 | 标签 | 说明 |
 |------|------|
-| `latest` | 最新构建，始终保持最新 |
-| `1.2.0` | 与上游 v1.2.0 版本同步 |
-| `1.2.0-5` | 基于 v1.2.0 + 5 个额外提交 |
-| `20260204` | 构建日期（YYYYMMDD） |
-| `20260204-abc1234` | 构建日期 + 提交哈希 |
+| `latest` | 最近发布的镜像 |
+| `1.2.0` | 与上游 v1.2.0 完全一致 |
+| `20260205` | 构建日期（YYYYMMDD） |
 
-**版本格式：** `{上游版本}` 或 `{上游版本}-{提交数}`
+**2. Fork 修改版本（手动发布，来自 docker 分支）**
 
-- `1.2.0` — 与上游 v1.2.0 发布版本完全同步
-- `1.2.0-5` — 基于 v1.2.0，合并该 tag 后又有 5 次提交（Bug 修复、Docker 优化等）
+| 标签 | 说明 |
+|------|------|
+| `latest` | 最近发布的镜像 |
+| `1.2.0-f1` | 基于上游 1.2.0，第 1 次本地修改 |
+| `1.2.0-f1-3` | 基于 1.2.0-f1 tag 后又有 3 个提交 |
+| `20260205-fork` | Fork 版本的日期标签 |
 
-**推荐使用：**
-- 生产环境：使用指定版本如 `1.2.0` 或 `1.2.0-5`
-- 开发测试：使用 `latest` 获取最新功能
+> 注：`latest` 标签始终指向最近发布的镜像，无论是上游版本还是 Fork 版本。
+
+**版本号格式：**
+
+- `X.Y.Z` — 与上游 vX.Y.Z 发布版本完全同步
+- `X.Y.Z-fN` — 基于上游 X.Y.Z，第 N 次本地修改发布
+- `X.Y.Z-fN-M` — 基于 X.Y.Z-fN tag，之后有 M 个新提交
+
+**f = fork**，表示包含本地修改（如 Bug 修复、功能增强等）
+
+**推荐选择：**
+- 需要最新上游功能：使用 `latest` 或具体版本如 `1.2.0`
+- 需要本地修复/增强：使用 `fork-latest` 或具体版本如 `1.2.0-f1`
 
 ### 快速开始
 

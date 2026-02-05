@@ -1,0 +1,89 @@
+name: Build Fork Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docker branch
+        uses: actions/checkout@v4
+        with:
+          ref: docker
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        run: |
+          # 获取最近的本地 tag（匹配 v*-f* 格式）
+          LATEST_TAG=$(git describe --tags --match "v*-f*" --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "错误：未找到本地 tag（格式：vX.Y.Z-fN）"
+            echo "请先创建一个本地 tag，例如：git tag v1.2.0-f1"
+            exit 1
+          fi
+          
+          echo "最近的本地 tag: $LATEST_TAG"
+          
+          # 移除 v 前缀，用于 Docker tag
+          BASE_VERSION="${LATEST_TAG#v}"
+          
+          # 计算从 tag 到 HEAD 的提交数
+          COMMITS_SINCE_TAG=$(git rev-list "$LATEST_TAG"..HEAD --count)
+          
+          if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
+            VERSION="${BASE_VERSION}-${COMMITS_SINCE_TAG}"
+            echo "距离 tag 有 $COMMITS_SINCE_TAG 个提交，版本: $VERSION"
+          else
+            VERSION="$BASE_VERSION"
+            echo "正好在 tag 上，版本: $VERSION"
+          fi
+          
+          DATE=$(date +'%Y%m%d')
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            BUILD_DATE=${{ steps.version.outputs.build_date }}
+            VCS_REF=${{ github.sha }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki:${{ steps.version.outputs.date }}-fork
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update DockerHub description
+        uses: peter-evans/dockerhub-description@v4
+        continue-on-error: true
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/powerwiki
+          readme-filepath: ./DOCKER.md

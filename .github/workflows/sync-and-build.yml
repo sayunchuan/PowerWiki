@@ -2,7 +2,7 @@ name: Sync Upstream and Build Docker
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 0 * * *'  # 每天 UTC 0:00（北京时间 8:00）
   workflow_dispatch:
 
 jobs:
@@ -33,34 +33,36 @@ jobs:
           if [ "$LOCAL" = "$UPSTREAM" ]; then
             echo "已是最新，无需同步"
             echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "merge_failed=false" >> $GITHUB_OUTPUT
           elif [ "$BASE" = "$UPSTREAM" ]; then
             echo "本地领先于 upstream，无需同步"
             echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "merge_failed=false" >> $GITHUB_OUTPUT
           else
             echo "发现更新，开始合并..."
-            git merge upstream/master -X theirs -m "chore: sync with upstream"
+            # 尝试合并，检测冲突
+            if ! git merge upstream/master -X theirs -m "chore: sync with upstream"; then
+              echo "合并失败，可能存在冲突"
+              echo "has_updates=false" >> $GITHUB_OUTPUT
+              echo "merge_failed=true" >> $GITHUB_OUTPUT
+              exit 0  # 不中断工作流，但跳过后续步骤
+            fi
             git push origin master
             echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "merge_failed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 确保 entrypoint.sh 使用 LF 行尾符
-      - name: Fix line endings
-        run: |
-          if [ -f docker-entrypoint.sh ]; then
-            sed -i 's/\r$//' docker-entrypoint.sh
-          fi
-
-      # 以下步骤仅在有更新或手动触发时执行
+      # 以下步骤仅在有更新或手动触发时执行（且合并成功）
       - name: Set up QEMU
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -68,7 +70,7 @@ jobs:
 
       # 获取版本信息用于标签（优先使用上游 Git tag + fork 修改计数）
       - name: Get version info
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         id: version
         run: |
           # 获取上游的 tags
@@ -116,7 +118,7 @@ jobs:
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
 
       - name: Build and push
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -136,7 +138,7 @@ jobs:
 
       # 同步 DOCKER.md 到 DockerHub 仓库描述
       - name: Update DockerHub description
-        if: steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+        if: (steps.sync.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch') && steps.sync.outputs.merge_failed != 'true'
         uses: peter-evans/dockerhub-description@v4
         continue-on-error: true
         with:
@@ -146,5 +148,11 @@ jobs:
           readme-filepath: ./DOCKER.md
 
       - name: Skip build (no updates)
-        if: steps.sync.outputs.has_updates != 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.sync.outputs.has_updates != 'true' && github.event_name != 'workflow_dispatch' && steps.sync.outputs.merge_failed != 'true'
         run: echo "No updates from upstream, skipping Docker build."
+
+      - name: Merge failed
+        if: steps.sync.outputs.merge_failed == 'true'
+        run: |
+          echo "::warning::合并上游失败，请手动检查并解决冲突"
+          echo "合并失败，跳过 Docker 构建"
