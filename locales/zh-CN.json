@@ -3,7 +3,8 @@
     "starting": "正在启动 PowerWiki 服务器...",
     "started": "PowerWiki 服务器已启动",
     "port": "端口",
-    "stopping": "正在停止服务器..."
+    "stopping": "正在停止服务器...",
+    "syncFailedButStarted": "{0}，但服务器已启动。请检查 Git 仓库配置。"
   },
   "git": {
     "cloning": "正在克隆仓库...",
@@ -15,7 +16,6 @@
     "syncComplete": "仓库同步完成",
     "syncFailed": "仓库同步失败",
     "upToDate": "仓库已是最新版本",
-    "autoSyncFailed": "自动同步失败",
     "cloneFailed": "Git clone 失败，退出码",
     "cloneExecutionFailed": "Git clone 执行失败",
     "autoSyncEnabled": "已启动自动同步",
@@ -25,11 +25,16 @@
     "repository": "仓库",
     "branch": "分支",
     "autoSyncInterval": "自动同步间隔",
-    "syncTip": "提示: 如果仓库同步失败，请检查配置文件中的 gitRepo 配置"
+    "syncTip": "提示: 如果仓库同步失败，请检查配置文件中的 gitRepo 配置",
+    "cannotGetCommit": "无法获取当前提交，继续尝试拉取...",
+    "operationFailed": "Git 操作失败",
+    "cannotGetCreatedTime": "无法获取文件 {0} 的 Git 创建时间",
+    "cannotGetModifiedTime": "无法获取文件 {0} 的 Git 修改时间"
   },
   "cache": {
     "clearing": "正在清理缓存...",
-    "cleared": "缓存已清理"
+    "cleared": "缓存已清理",
+    "clearedExpiredItems": "已清理 {0} 个过期缓存项"
   },
   "error": {
     "configNotFound": "配置文件未找到",
@@ -37,6 +42,75 @@
     "fileNotFound": "文件未找到",
     "serverError": "服务器错误",
     "cannotReadHomePage": "无法读取首页文件",
-    "usingDefaultWelcome": "将使用默认欢迎页面"
+    "usingDefaultWelcome": "将使用默认欢迎页面",
+    "templateReadFailed": "读取模板 {0} 失败",
+    "initRepoFailed": "初始化仓库失败",
+    "initRepoFailedTip": "请检查 Git 仓库地址和网络连接",
+    "skipSyncGitOperating": "跳过本次同步：Git 操作正在进行中",
+    "skipSyncNotInitialized": "跳过本次同步：仓库尚未初始化完成",
+    "autoSyncFailed": "自动同步失败",
+    "readAccessLogFailed": "读取访问日志失败",
+    "saveAccessLogFailed": "保存访问日志失败",
+    "ssrRenderFailed": "SSR 渲染失败，回退到普通模式",
+    "postSsrRenderFailed": "文章 SSR 渲染失败，回退到普通模式"
+  },
+  "log": {
+    "accessLog": "访问日志"
+  },
+  "static": {
+    "imagePathDecodeFailed": "图片路径解码失败，使用原始路径",
+    "imageNotFound": "图片不存在",
+    "getImageFailed": "获取图片失败",
+    "pathDecodeFailed": "路径解码失败，使用原始路径",
+    "notPdfFile": "不是 PDF 文件",
+    "getPdfFailed": "获取 PDF 失败",
+    "pdfNotFound": "PDF 文件不存在"
+  },
+  "browser": {
+    "unknown": "未知",
+    "wechat": "微信浏览器",
+    "edge": "Edge",
+    "opera": "Opera",
+    "chrome": "Chrome",
+    "firefox": "Firefox",
+    "safariIos": "Safari (iOS)",
+    "safari": "Safari",
+    "ie": "Internet Explorer",
+    "android": "Android 浏览器",
+    "crawler": "爬虫",
+    "other": "其他"
+  },
+  "stats": {
+    "readStatsFailed": "读取统计数据失败",
+    "saveStatsFailed": "保存统计数据失败",
+    "getPostsFailed": "获取文章列表失败",
+    "getPostFailed": "获取文章失败",
+    "postNotFound": "文章不存在",
+    "readHomePageFailed": "无法读取首页",
+    "getAdminStatsFailed": "获取管理统计失败",
+    "cacheCleared": "已清除缓存",
+    "allCacheCleared": "已清除所有缓存"
+  },
+  "weekday": {
+    "sunday": "周日",
+    "monday": "周一",
+    "tuesday": "周二",
+    "wednesday": "周三",
+    "thursday": "周四",
+    "friday": "周五",
+    "saturday": "周六"
+  },
+  "tip": {
+    "configNotFoundTip": "提示: 可以复制 config.example.json 为 config.json 并修改配置"
+  },
+  "feed": {
+    "skipArticle": "RSS: 跳过文章",
+    "generateRssFailed": "生成 RSS 失败",
+    "generateSitemapFailed": "生成 sitemap 失败"
+  },
+  "markdown": {
+    "highlightError": "代码高亮错误",
+    "configMarkedFailed": "配置 marked 失败，使用默认配置",
+    "parseError": "Markdown 解析错误"
   }
 }

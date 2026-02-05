@@ -199,6 +199,30 @@ tags: [etiqueta1, etiqueta2]
 - **PDF**: pdfjs-dist
 - **Contenedores**: Docker
 
+## Estructura del Proyecto
+
+```
+PowerWiki/
+├── src/                     # Código fuente
+│   ├── index.js             # Punto de entrada del servidor Express
+│   ├── routes/              # Módulos de rutas
+│   │   ├── api.js           # Rutas API
+│   │   ├── feeds.js         # Rutas RSS/Sitemap
+│   │   └── static.js        # Rutas de archivos estáticos
+│   ├── config/              # Módulos de configuración
+│   │   ├── env.js           # Variables de entorno
+│   │   └── i18n.js          # Internacionalización
+│   └── utils/               # Módulos de utilidad
+│       ├── cacheManager.js  # Gestión de caché
+│       ├── gitManager.js    # Operaciones Git
+│       └── markdownParser.js# Analizador Markdown
+├── locales/                 # Archivos de traducción
+├── templates/               # Plantillas HTML
+├── public/                  # Activos estáticos
+├── config.example.json      # Plantilla de configuración
+└── package.json             # Dependencias
+```
+
 ## Licencia
 
 MIT License - ver [LICENSE](LICENSE) para más detalles.
