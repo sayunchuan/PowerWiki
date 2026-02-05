@@ -1064,7 +1064,7 @@ app.get('/api/stats/detail', (req, res) => {
 
     // 准备最受欢迎文章图表数据（Top 10）
     const popularPostsChartData = postStatsArray.slice(0, 10).map(post => ({
-      name: post.filePath.length > 30 ? post.filePath.substring(0, 30) + '...' : post.filePath,
+      name: (post.filePath || '').length > 30 ? (post.filePath || '').substring(0, 30) + '...' : (post.filePath || ''),
       count: post.count
     }));
 
