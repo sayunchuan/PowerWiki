@@ -12,6 +12,25 @@ This Docker image is based on [PowerWiki](https://github.com/steven-ld/PowerWiki
 
 A modern Git-based Markdown wiki system with auto-sync, syntax highlighting, and Feishu-style UI.
 
+### Supported Tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest build, always up-to-date |
+| `1.2.0` | Synced with upstream tag v1.2.0 |
+| `1.2.0-5` | Based on v1.2.0 + 5 additional commits |
+| `20260204` | Build date (YYYYMMDD) |
+| `20260204-abc1234` | Build date + commit SHA |
+
+**Version Format:** `{upstream_version}` or `{upstream_version}-{commits}`
+
+- `1.2.0` — Exactly synced with upstream release v1.2.0
+- `1.2.0-5` — Based on v1.2.0, with 5 commits after merging the tag (bug fixes, Docker improvements, etc.)
+
+**Recommended:**
+- Production: Use specific version like `1.2.0` or `1.2.0-5`
+- Development: Use `latest` for newest features
+
 ### Quick Start
 
 ```bash
@@ -104,6 +123,25 @@ Create config.json:
 ## 中文
 
 一个现代化的基于 Git 的 Markdown 知识库系统，支持自动同步、语法高亮和飞书风格界面。
+
+### 镜像标签
+
+| 标签 | 说明 |
+|------|------|
+| `latest` | 最新构建，始终保持最新 |
+| `1.2.0` | 与上游 v1.2.0 版本同步 |
+| `1.2.0-5` | 基于 v1.2.0 + 5 个额外提交 |
+| `20260204` | 构建日期（YYYYMMDD） |
+| `20260204-abc1234` | 构建日期 + 提交哈希 |
+
+**版本格式：** `{上游版本}` 或 `{上游版本}-{提交数}`
+
+- `1.2.0` — 与上游 v1.2.0 发布版本完全同步
+- `1.2.0-5` — 基于 v1.2.0，合并该 tag 后又有 5 次提交（Bug 修复、Docker 优化等）
+
+**推荐使用：**
+- 生产环境：使用指定版本如 `1.2.0` 或 `1.2.0-5`
+- 开发测试：使用 `latest` 获取最新功能
 
 ### 快速开始
 

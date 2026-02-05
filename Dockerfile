@@ -1,5 +1,21 @@
 FROM node:18-alpine
 
+# 构建参数（用于动态注入版本信息）
+ARG VERSION=latest
+ARG BUILD_DATE
+ARG VCS_REF
+
+# OCI 标准标签
+LABEL org.opencontainers.image.title="PowerWiki"
+LABEL org.opencontainers.image.description="A modern Git-based Markdown wiki system"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.source="https://github.com/sayunchuan/PowerWiki"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/sayunchuan/powerwiki"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.base.name="node:18-alpine"
+
 # 设置工作目录
 WORKDIR /app
 
