@@ -96,15 +96,14 @@ body {
 
 .search-box {
   position: relative;
-  padding: 0 12px 12px;
+  padding: calc(var(--header-height) + 16px) 12px 12px;
   flex-shrink: 0;
 }
 
 .search-box .search-icon {
   position: absolute;
   left: 22px;
-  top: 50%;
-  transform: translateY(-70%);
+  top: calc(var(--header-height) + 16px + 8px);
   color: var(--text-placeholder);
   pointer-events: none;
 }
