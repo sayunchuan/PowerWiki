@@ -4,6 +4,7 @@ const cacheManager = require('../../utils/cacheManager');
 const { parseMarkdown } = require('../../utils/markdownParser');
 const { readStats } = require('../services/statsService');
 const { readTemplate, renderTemplate } = require('../services/templateService');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -36,12 +37,12 @@ router.get('/', async (req, res) => {
       const parsed = parseMarkdown(content);
       homeContent = {
         html: parsed.html,
-        title: parsed.title || '首页',
+        title: parsed.title || t('content.home'),
         path: homePagePath
       };
     } catch (error) {
-      console.warn(`⚠️  无法读取首页文件 ${homePagePath}:`, error.message);
-      console.warn('💡 将使用默认欢迎页面');
+      console.warn(t('error.readHomePageFailed', homePagePath) + ':', error.message);
+      console.warn(t('error.defaultWelcomeUsed'));
     }
   }
 

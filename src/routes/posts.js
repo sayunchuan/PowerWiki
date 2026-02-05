@@ -4,6 +4,7 @@ const cacheManager = require('../../utils/cacheManager');
 const { parseMarkdown } = require('../../utils/markdownParser');
 const seoHelper = require('../../utils/seoHelper');
 const { recordPostView } = require('../services/statsService');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -140,7 +141,7 @@ router.get('/', async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('获取文章列表失败:', error);
+    console.error(t('error.getPostsFailed'), error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -152,7 +153,7 @@ router.get('/*', async (req, res) => {
     try {
       filePath = decodeURIComponent(filePath);
     } catch (e) {
-      console.warn('路径解码失败，使用原始路径:', filePath);
+      console.warn(t('error.pathDecodeFailed', filePath));
     }
 
     const cached = cacheManager.get('post', filePath);
@@ -177,7 +178,7 @@ router.get('/*', async (req, res) => {
         fileInfo,
         path: filePath,
         html: '',
-        description: 'PDF 文档',
+        description: t('content.pdfDocument'),
         viewCount
       };
 
@@ -214,8 +215,8 @@ router.get('/*', async (req, res) => {
       res.json(result);
     }
   } catch (error) {
-    console.error('获取文章失败:', error);
-    res.status(404).json({ error: '文章不存在' });
+    console.error(t('error.getPostFailed'), error.message);
+    res.status(404).json({ error: t('error.postNotFound') });
   }
 });
 

@@ -3,7 +3,19 @@
     "starting": "Starting PowerWiki server...",
     "started": "PowerWiki server started",
     "port": "Port",
-    "stopping": "Stopping server..."
+    "stopping": "Stopping server...",
+    "configLoaded": "Configuration loaded",
+    "configLoadError": "Failed to load configuration",
+    "error": "Server error",
+    "pageNotFound": "Page not found",
+    "siteTitle": "Site Title",
+    "url": "Server URL",
+    "dataDir": "Data Directory",
+    "cacheDir": "Cache Directory",
+    "ready": "Server is ready",
+    "disabled": "Disabled",
+    "startError": "Failed to start server",
+    "shutdown": "Server shutdown"
   },
   "git": {
     "cloning": "Cloning repository...",
@@ -22,21 +34,23 @@
     "interval": "interval",
     "seconds": "s",
     "minutes": "minutes",
-    "repository": "repository",
+    "repository": "Git Repository",
     "branch": "branch",
     "autoSyncInterval": "Auto sync interval",
-    "syncTip": "Tip: If repository sync fails, please check the gitRepo configuration in config file"
+    "syncTip": "Tip: If repository sync fails, please check the gitRepo configuration in config file",
+    "syncingRepo": "Syncing Git repository...",
+    "repoUpdated": "Repository updated!",
+    "initializing": "Initializing repository",
+    "initialized": "Repository initialized",
+    "initError": "Repository initialization failed",
+    "autoSync": "Auto Sync",
+    "autoSyncStart": "Starting auto sync",
+    "autoSyncSuccess": "Auto sync completed",
+    "autoSyncError": "Auto sync failed"
   },
-  "cache": {
-    "clearing": "Clearing cache...",
-    "cleared": "Cache cleared"
-  },
-  "error": {
-    "configNotFound": "Configuration file not found",
-    "gitRepoRequired": "Git repository URL is required",
-    "fileNotFound": "File not found",
-    "serverError": "Server error",
-    "cannotReadHomePage": "Cannot read homepage file",
-    "usingDefaultWelcome": "Using default welcome page"
+  "stats": {
+    "readStatsFailed": "Failed to read statistics",
+    "saveStatsFailed": "Failed to save statistics",
+    "saveLogFailed": "Failed to save access log"
   }
 }

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const cacheManager = require('../../utils/cacheManager');
 const { readStats, readAccessLog } = require('../services/statsService');
+const { t } = require('../../config/i18n');
 
 router.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=30');
@@ -70,7 +71,7 @@ router.get('/detail', (req, res) => {
       const hour = new Date(record.timestamp).getHours();
       hourStats[hour] = (hourStats[hour] || 0) + 1;
 
-      const browser = record.browser || '未知';
+      const browser = record.browser || t('browser.unknown');
       browserStats[browser] = (browserStats[browser] || 0) + 1;
 
       const weekday = new Date(record.timestamp).getDay();
@@ -116,7 +117,15 @@ router.get('/detail', (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
-    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdayNames = [
+      t('weekday.sunday'),
+      t('weekday.monday'),
+      t('weekday.tuesday'),
+      t('weekday.wednesday'),
+      t('weekday.thursday'),
+      t('weekday.friday'),
+      t('weekday.saturday')
+    ];
     const weekdayChartData = [];
     for (let i = 0; i < 7; i++) {
       weekdayChartData.push({
@@ -147,7 +156,7 @@ router.get('/detail', (req, res) => {
       recentLogs: accessLog.slice(-50).reverse()
     });
   } catch (error) {
-    console.error('获取管理统计失败:', error);
+    console.error(t('error.getStatsFailed'), error.message);
     res.status(500).json({ error: error.message });
   }
 });

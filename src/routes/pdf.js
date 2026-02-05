@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
+const { t } = require('../../config/i18n');
 
 function getGitManager(config) {
   const GitManager = require('../../utils/gitManager');
@@ -14,11 +15,11 @@ router.get('/*', async (req, res) => {
     try {
       filePath = decodeURIComponent(filePath);
     } catch (e) {
-      console.warn('路径解码失败，使用原始路径:', filePath);
+      console.warn(t('error.pathDecodeFailed', filePath));
     }
 
     if (!filePath.endsWith('.pdf')) {
-      return res.status(400).json({ error: '不是 PDF 文件' });
+      return res.status(400).json({ error: t('error.notPdfFile') });
     }
 
     const gitManager = getGitManager(config);
@@ -30,8 +31,8 @@ router.get('/*', async (req, res) => {
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
   } catch (error) {
-    console.error('获取 PDF 失败:', error);
-    res.status(404).json({ error: 'PDF 文件不存在' });
+    console.error(t('error.getPdfFailed'), error.message);
+    res.status(404).json({ error: t('error.pdfNotFound') });
   }
 });
 
