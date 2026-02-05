@@ -235,7 +235,7 @@ class GitManager {
         if (entry.isDirectory()) {
           await scanDirectory(fullPath);
         } else if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown') || entry.name.endsWith('.pdf')) {
-          const relativePath = path.relative(this.repoPath, fullPath);
+          const relativePath = path.relative(this.repoPath, fullPath).replace(/\\/g, '/');
           const stats = await fs.stat(fullPath);
           
           // 尝试从 Git 获取创建时间和修改时间
