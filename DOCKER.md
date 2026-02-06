@@ -274,4 +274,4 @@ volumes:
 
 - Source / 源码: [steven-ld/PowerWiki](https://github.com/steven-ld/PowerWiki)
 - Docker Fork: [sayunchuan/PowerWiki](https://github.com/sayunchuan/PowerWiki)
-- Fork Changelog / 变更记录: [CHANGELOG.fork.md](CHANGELOG.fork.md)
+- Fork Changelog / 变更记录: [CHANGELOG.fork.md](https://github.com/sayunchuan/PowerWiki/blob/docker/CHANGELOG.fork.md)
