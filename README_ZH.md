@@ -435,7 +435,7 @@ MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
 ## 👥 贡献者
 
-- [@sayunchuan](https://github.com/sayunchuan) - 多语言支持
+- [@sayunchuan](https://github.com/sayunchuan) - 增加多语言、Mermaid 支持、修复若干问题
 
 ## 🙏 致谢
 

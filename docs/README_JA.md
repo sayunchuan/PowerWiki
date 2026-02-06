@@ -229,7 +229,7 @@ MIT License - [LICENSE](LICENSE) をご覧ください。
 
 ## 貢献者
 
-- [@sayunchuan](https://github.com/sayunchuan) - 多言語サポート
+- [@sayunchuan](https://github.com/sayunchuan) - 多言語、Mermaid サポート追加、さまざまな問題の修正
 
 ---
 

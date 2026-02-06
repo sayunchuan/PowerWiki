@@ -228,7 +228,7 @@ MIT License - см. [LICENSE](LICENSE) для подробностей.
 
 ## Вклад
 
-- [@sayunchuan](https://github.com/sayunchuan) - Многоязычная поддержка
+- [@sayunchuan](https://github.com/sayunchuan) - Добавлена многоязычная поддержка, Mermaid, исправлены различные проблемы
 
 ---
 

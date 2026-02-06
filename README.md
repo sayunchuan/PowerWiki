@@ -435,7 +435,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 👥 Contributors
 
-- [@sayunchuan](https://github.com/sayunchuan) - Multi-language support
+- [@sayunchuan](https://github.com/sayunchuan) - Add multi-language, Mermaid support, fix various issues
 
 ## 🙏 Credits
 

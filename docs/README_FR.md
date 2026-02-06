@@ -229,7 +229,7 @@ MIT License - voir [LICENSE](LICENSE) pour plus de détails.
 
 ## Contributeurs
 
-- [@sayunchuan](https://github.com/sayunchuan) - Support multilingue
+- [@sayunchuan](https://github.com/sayunchuan) - Ajout support multilingue, Mermaid, correction de divers problèmes
 
 ---
 
