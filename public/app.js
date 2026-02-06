@@ -7,9 +7,12 @@ function encodePath(path) {
 const ThemeManager = {
   STORAGE_KEY: 'powerwiki_theme',
   MANUAL_KEY: 'powerwiki_theme_manual',
+  MANUAL_DATE_KEY: 'powerwiki_theme_manual_date',
   
   init() {
-    const isManual = localStorage.getItem(this.MANUAL_KEY) === 'true';
+    const manualDate = localStorage.getItem(this.MANUAL_DATE_KEY);
+    const today = new Date().toDateString();
+    const isManual = localStorage.getItem(this.MANUAL_KEY) === 'true' && manualDate === today;
     let theme;
     
     if (isManual) {
@@ -17,6 +20,7 @@ const ThemeManager = {
     } else {
       theme = this.getAutoTheme();
       localStorage.setItem(this.STORAGE_KEY, theme);
+      localStorage.removeItem(this.MANUAL_KEY);
     }
     
     document.documentElement.setAttribute('data-theme', theme);
@@ -39,6 +43,7 @@ const ThemeManager = {
     const next = current === 'light' ? 'dark' : 'light';
     this.setTheme(next);
     localStorage.setItem(this.MANUAL_KEY, 'true');
+    localStorage.setItem(this.MANUAL_DATE_KEY, new Date().toDateString());
   },
   
   updateToggleIcon(theme) {
