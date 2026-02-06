@@ -47,6 +47,9 @@ This repository provides two types of Docker images:
 - Need latest upstream features: Use `latest` or specific version like `1.2.0`
 - Need local fixes/enhancements: Use `fork-latest` or specific version like `1.2.0-f1`
 
+> For detailed changes in each fork version, see [CHANGELOG.fork.md](CHANGELOG.fork.md).
+> Inside the container: `docker exec <container> cat /app/CHANGELOG.fork.md`
+
 ### Quick Start
 
 ```bash
@@ -175,6 +178,9 @@ Create config.json:
 - 需要最新上游功能：使用 `latest` 或具体版本如 `1.2.0`
 - 需要本地修复/增强：使用 `fork-latest` 或具体版本如 `1.2.0-f1`
 
+> 各 fork 版本的详细变更内容请查看 [CHANGELOG.fork.md](CHANGELOG.fork.md)。
+> 容器内查看：`docker exec <container> cat /app/CHANGELOG.fork.md`
+
 ### 快速开始
 
 ```bash
@@ -268,3 +274,4 @@ volumes:
 
 - Source / 源码: [steven-ld/PowerWiki](https://github.com/steven-ld/PowerWiki)
 - Docker Fork: [sayunchuan/PowerWiki](https://github.com/sayunchuan/PowerWiki)
+- Fork Changelog / 变更记录: [CHANGELOG.fork.md](CHANGELOG.fork.md)
