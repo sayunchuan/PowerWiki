@@ -294,7 +294,7 @@ body {
   flex-shrink: 0;
 }
 
-.nav-dir.expanded .nav-dir-toggle {
+.nav-dir.expanded > .nav-dir-header > .nav-dir-toggle {
   transform: rotate(90deg);
 }
 
@@ -959,6 +959,12 @@ body {
 .markdown-body .mermaid svg {
   max-width: 100%;
   height: auto;
+}
+
+/* 暗黑模式下 Mermaid 使用纯白背景 */
+[data-theme="dark"] .markdown-body .mermaid {
+  background: #ffffff;
+  border-radius: 8px;
 }
 
 .markdown-body blockquote {

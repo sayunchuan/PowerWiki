@@ -41,7 +41,7 @@ const ThemeManager = {
     if (typeof mermaid !== 'undefined') {
       mermaid.initialize({
         startOnLoad: false,
-        theme: theme === 'dark' ? 'dark' : 'default',
+        theme: 'default',
         securityLevel: 'loose'
       });
       // 重新渲染当前页面上的 Mermaid 图表
@@ -80,10 +80,9 @@ const ThemeManager = {
 
 // 初始化 Mermaid 图表渲染
 if (typeof mermaid !== 'undefined') {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   mermaid.initialize({
     startOnLoad: false,
-    theme: isDark ? 'dark' : 'default',
+    theme: 'default',
     securityLevel: 'loose'
   });
 }
@@ -93,9 +92,21 @@ const i18n = {
   locale: document.documentElement.lang || 'zh-CN',
   translations: {},
 
-  init() {
-    // 从 window.__I18N__ 获取翻译
-    this.translations = window.__I18N__ || {};
+  async init() {
+    // 优先从 window.__I18N__ 获取翻译（首页注入）
+    if (window.__I18N__ && Object.keys(window.__I18N__).length > 0) {
+      this.translations = window.__I18N__;
+      return;
+    }
+    
+    // 否则从 API 获取翻译（其他页面）
+    try {
+      const response = await fetch('/api/i18n');
+      this.translations = await response.json();
+    } catch (error) {
+      console.error('Failed to load translations:', error);
+      this.translations = {};
+    }
   },
 
   t(key) {
@@ -329,7 +340,7 @@ const sidebarOverlay = document.getElementById('sidebarOverlay');
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
   ThemeManager.init(); // 初始化主题
-  i18n.init(); // 初始化国际化（同步）
+  await i18n.init(); // 初始化国际化（异步）
   i18n.initElements(); // 初始化页面元素的翻译
   loadConfig();
   await loadPosts(); // 等待文章列表加载完成
@@ -976,18 +987,31 @@ function renderTreeNodes(node, prefix = '') {
       const dirPath = prefix ? `${prefix}/${dirName}` : dirName;
       const hasReadme = dirNode.readme ? 'true' : 'false';
       const readmePath = dirNode.readme ? dirNode.readme.path : '';
+      const hasChildren = (dirNode.dirs && Object.keys(dirNode.dirs).length > 0)
+                       || (dirNode.files && dirNode.files.length > 0);
 
-      html += `
-        <li class="nav-dir" data-has-readme="${hasReadme}" data-readme-path="${readmePath}">
-          <div class="nav-dir-header">
-            <span class="nav-dir-toggle">▶</span>
-            <span class="nav-dir-name${dirNode.readme ? ' has-readme' : ''}" ${dirNode.readme ? `data-readme-path="${readmePath}"` : ''}>${escapeHtml(dirName)}</span>
-          </div>
-          <ul class="nav-dir-children" style="display: none;">
-            ${renderTreeNodes(dirNode, dirPath)}
-          </ul>
-        </li>
-      `;
+      if (!hasChildren && dirNode.readme) {
+        // 仅含 README 的目录：渲染为普通文档项
+        const fileIcon = `<svg class="nav-file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h10M7 12h7M7 16h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+        html += `
+          <li class="nav-item-file" data-path="${readmePath}" data-type="markdown">
+            ${fileIcon}
+            <span class="nav-item-title">${escapeHtml(dirName)}</span>
+          </li>
+        `;
+      } else {
+        html += `
+          <li class="nav-dir" data-has-readme="${hasReadme}" data-readme-path="${readmePath}">
+            <div class="nav-dir-header">
+              <span class="nav-dir-toggle">▶</span>
+              <span class="nav-dir-name${dirNode.readme ? ' has-readme' : ''}" ${dirNode.readme ? `data-readme-path="${readmePath}"` : ''}>${escapeHtml(dirName)}</span>
+            </div>
+            <ul class="nav-dir-children" style="display: none;">
+              ${renderTreeNodes(dirNode, dirPath)}
+            </ul>
+          </li>
+        `;
+      }
     });
   }
 
