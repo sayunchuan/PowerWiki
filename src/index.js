@@ -128,6 +128,7 @@ async function initRepo() {
       console.log(`✅ ${t('git.syncComplete')}`);
       cacheManager.delete('posts');
       cacheManager.delete('config');
+      cacheManager.delete('ext:tags');
       console.log(`🗑️  ${t('cache.cleared')}`);
     } else {
       console.log(`✅ ${t('git.upToDate')}`);
@@ -169,6 +170,7 @@ function startAutoSync() {
         console.log(`⏰ [${new Date().toLocaleString()}] ${t('git.syncComplete')}`);
         cacheManager.delete('posts');
         cacheManager.delete('config');
+        cacheManager.delete('ext:tags');
         console.log(`🗑️  ${t('cache.cleared')}`);
       }
     } catch (error) {
@@ -276,6 +278,10 @@ const apiOptions = {
 };
 app.use('/api', createApiRoutes(apiOptions));
 app.use('/api', createStaticRoutes(apiOptions));
+
+// 注册扩展路由（Tag 等功能）
+const { registerExtensions } = require('./extensions');
+registerExtensions(app, { gitManager, config, cacheManager });
 
 // 注册 Feed 路由（RSS 和 Sitemap）
 const feedsRouter = createApiFeedRoutes({
@@ -392,6 +398,15 @@ app.get('/', async (req, res) => {
     }
   }
 
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// Tag 页面 - 返回 index.html 由前端路由处理
+app.get('/tag', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+app.get('/tag/*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 

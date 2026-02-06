@@ -35,6 +35,7 @@
     <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/rss.xml" id="rssFeed">
 
     <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/extensions/tag-page.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 </head>
 <body>
@@ -86,6 +87,10 @@
         <main class="main-content">
             <div id="homeView" class="view active">
                 <!-- 首页内容由模板加载 -->
+            </div>
+
+            <div id="tagView" class="view">
+                <div class="tag-view-container"></div>
             </div>
 
             <div id="postView" class="view">
@@ -154,6 +159,7 @@
     </div>
 
     <script src="/extensions/tag-feature.js"></script>
+    <script src="/extensions/tag-page.js"></script>
     <script src="/app.js"></script>
 </body>
 </html>

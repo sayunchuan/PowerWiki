@@ -1,0 +1,263 @@
+/**
+ * Tag 页面样式
+ * 独立的扩展样式文件，与主样式解耦
+ */
+
+/* ==================== Tag 视图容器 ==================== */
+
+#tagView {
+  display: none;
+}
+
+#tagView.active {
+  display: block;
+}
+
+.tag-view-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ==================== Tag 页面头部 ==================== */
+
+.tag-view-header {
+  margin-bottom: 24px;
+}
+
+.tag-view-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-title);
+  margin-bottom: 8px;
+}
+
+.tag-view-stats {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ==================== 返回按钮 ==================== */
+
+.tag-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-body);
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.tag-back-btn:hover {
+  background: var(--bg-hover);
+}
+
+/* ==================== Tag 云 ==================== */
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.tag-cloud-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tag-cloud-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tag-cloud-item .tag-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.tag-cloud-item .tag-name {
+  font-weight: 500;
+}
+
+.tag-cloud-item .tag-count {
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+/* ==================== Tag 文章列表（飞书风格卡片） ==================== */
+
+.tag-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-post-item {
+  position: relative;
+  display: block;
+  padding: 14px 16px;
+  background: var(--bg-body);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.tag-post-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(51, 112, 255, 0.08);
+}
+
+/* 文章标题 */
+.tag-post-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0;
+}
+
+.tag-post-item:hover .tag-post-title {
+  color: var(--primary);
+}
+
+/* 文章路径 */
+.tag-post-path {
+  font-size: 12px;
+  color: var(--text-placeholder);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右上角标签区域 */
+.tag-post-tags {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+/* 胶囊标签样式（复用文章页风格，不可交互） */
+.tag-post-tags .tag-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 50px;
+  border: 1px solid currentColor;
+  background: transparent;
+  pointer-events: none;
+}
+
+.tag-post-tags .tag-label .tag-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* +N 更多标签 */
+.tag-post-tags .tag-more {
+  color: var(--text-secondary);
+  border-color: var(--border-light);
+  font-size: 10px;
+}
+
+/* ==================== 状态样式 ==================== */
+
+/* 加载状态 */
+.tag-view-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* 空状态 */
+.tag-view-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+}
+
+/* 错误状态 */
+.tag-view-error {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.tag-view-error button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tag-view-error button:hover {
+  background: var(--primary-hover);
+}
+
+/* ==================== 响应式 ==================== */
+
+@media (max-width: 768px) {
+  .tag-view-container {
+    padding: 16px;
+  }
+  
+  .tag-view-title {
+    font-size: 20px;
+  }
+  
+  .tag-cloud {
+    gap: 8px;
+  }
+  
+  .tag-cloud-item {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .tag-post-item {
+    padding: 12px;
+  }
+  
+  .tag-post-title {
+    font-size: 13px;
+  }
+  
+  .tag-post-tags {
+    position: static;
+    max-width: 100%;
+    margin-top: 8px;
+    justify-content: flex-start;
+  }
+}

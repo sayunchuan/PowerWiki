@@ -624,6 +624,10 @@ function goToHome() {
   try {
     homeView.classList.add('active');
     postView.classList.remove('active');
+    // 隐藏所有扩展视图
+    if (window.PowerWikiExtensions) {
+      Object.values(window.PowerWikiExtensions).forEach(ext => ext.hideView && ext.hideView());
+    }
     currentPost = null;
     window.history.pushState({}, '', '/');
 
@@ -672,6 +676,20 @@ function goToHome() {
 // 设置路由
 function setupRouting() {
   const path = window.location.pathname;
+  
+  // === 扩展路由钩子 ===
+  if (window.PowerWikiExtensions) {
+    for (const ext of Object.values(window.PowerWikiExtensions)) {
+      const match = ext.matchRoute && ext.matchRoute(path);
+      if (match) {
+        ext.showView && ext.showView(match.tagName);
+        return;
+      }
+    }
+  }
+  // === 扩展路由钩子结束 ===
+  
+  // 文章详情页路由
   if (path.startsWith('/post/')) {
     const encodedPath = path.replace('/post/', '');
     // 解码 URL 编码的路径
@@ -1184,6 +1202,10 @@ function renderPost(post) {
   // 显示文章视图
   postView.classList.add('active');
   homeView.classList.remove('active');
+  // 隐藏所有扩展视图
+  if (window.PowerWikiExtensions) {
+    Object.values(window.PowerWikiExtensions).forEach(ext => ext.hideView && ext.hideView());
+  }
 
   // 更新 SEO meta 标签（文章页）
   const articleUrl = `${window.location.origin}/post/${encodePath(post.path)}`;
@@ -1729,11 +1751,31 @@ function openImageViewer(imageSrc, currentPage, totalPages) {
 
 // 处理浏览器前进后退
 window.addEventListener('popstate', (e) => {
+  const path = window.location.pathname;
+  
+  // === 扩展路由钩子 ===
+  if (window.PowerWikiExtensions) {
+    for (const ext of Object.values(window.PowerWikiExtensions)) {
+      const match = ext.matchRoute && ext.matchRoute(path);
+      if (match) {
+        ext.showView && ext.showView(match.tagName);
+        return;
+      }
+    }
+  }
+  // === 扩展路由钩子结束 ===
+  
+  // 文章页面路由
   if (e.state && e.state.path) {
     loadPost(e.state.path);
   } else {
+    // 首页
     homeView.classList.add('active');
     postView.classList.remove('active');
+    // 隐藏所有扩展视图
+    if (window.PowerWikiExtensions) {
+      Object.values(window.PowerWikiExtensions).forEach(ext => ext.hideView && ext.hideView());
+    }
     currentPost = null;
 
     // 更新 SEO meta 标签（首页）
