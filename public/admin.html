@@ -537,6 +537,38 @@
     </div>
     
     <script>
+        // 主题管理 - 与主应用同步
+        const ThemeManager = {
+            STORAGE_KEY: 'powerwiki_theme',
+            MANUAL_KEY: 'powerwiki_theme_manual',
+            MANUAL_DATE_KEY: 'powerwiki_theme_manual_date',
+            
+            init() {
+                const manualDate = localStorage.getItem(this.MANUAL_DATE_KEY);
+                const today = new Date().toDateString();
+                const isManual = localStorage.getItem(this.MANUAL_KEY) === 'true' && manualDate === today;
+                let theme;
+                
+                if (isManual) {
+                    theme = localStorage.getItem(this.STORAGE_KEY) || 'light';
+                } else {
+                    theme = this.getAutoTheme();
+                    localStorage.setItem(this.STORAGE_KEY, theme);
+                    localStorage.removeItem(this.MANUAL_KEY);
+                }
+                
+                document.documentElement.setAttribute('data-theme', theme);
+            },
+            
+            getAutoTheme() {
+                const hour = new Date().getHours();
+                return (hour >= 22 || hour < 5) ? 'dark' : 'light';
+            }
+        };
+        
+        // 初始化主题
+        ThemeManager.init();
+        
         // 国际化支持 - 由服务器端设置
         const LANG = 'zh-CN'; // 将被服务器替换
         
