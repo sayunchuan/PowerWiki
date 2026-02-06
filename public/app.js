@@ -57,6 +57,62 @@ const ThemeManager = {
   }
 };
 
+// 国际化 (i18n) 支持 - 复用服务器端翻译
+const i18n = {
+  locale: document.documentElement.lang || 'zh-CN',
+  translations: {},
+
+  init() {
+    // 从 window.__I18N__ 获取翻译
+    this.translations = window.__I18N__ || {};
+  },
+
+  t(key) {
+    const keys = key.split('.');
+    let result = this.translations;
+
+    for (const k of keys) {
+      if (result && result[k] !== undefined) {
+        result = result[k];
+      } else {
+        return key; // 返回 key 如果翻译不存在
+      }
+    }
+
+    return result;
+  },
+
+  // 初始化页面元素的 i18n 属性
+  initElements() {
+    // 设置带 data-i18n 属性的元素文本
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      el.textContent = this.t(key);
+    });
+
+    // 设置带 data-i18n-placeholder 属性的 placeholder
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.placeholder = this.t(key);
+    });
+
+    // 设置带 data-i18n-title 属性的 title
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      el.title = this.t(key);
+    });
+  },
+
+  // 格式化翻译（支持参数替换）
+  tf(key, ...args) {
+    let text = this.t(key);
+    args.forEach((arg, index) => {
+      text = text.replace(`{${index}}`, arg);
+    });
+    return text;
+  }
+};
+
 // 全局状态
 let postsTree = {};
 let postsFlat = [];
@@ -107,7 +163,7 @@ const ClientCache = {
 
       return data.value;
     } catch (error) {
-      console.warn('读取缓存失败:', error);
+      console.warn(i18n.t('client.readCacheFailed'), error);
       return null;
     }
   },
@@ -130,7 +186,7 @@ const ClientCache = {
     } catch (error) {
       // 如果存储空间不足，清除旧缓存
       if (error.name === 'QuotaExceededError') {
-        console.warn('存储空间不足，正在清理旧缓存...');
+        console.warn(i18n.t('client.storageFull'));
         this.clearExpired();
         // 重试一次
         try {
@@ -138,10 +194,10 @@ const ClientCache = {
           const expiresAt = Date.now() + (ttl || this.DEFAULT_TTL[type] || 5 * 60 * 1000);
           localStorage.setItem(key, JSON.stringify({ value, expiresAt, createdAt: Date.now() }));
         } catch (e) {
-          console.error('缓存设置失败:', e);
+          console.error(i18n.t('client.cacheSetFailed'), e);
         }
       } else {
-        console.error('缓存设置失败:', error);
+        console.error(i18n.t('client.cacheSetFailed'), error);
       }
     }
   },
@@ -219,7 +275,7 @@ const ClientCache = {
 setInterval(() => {
   const cleared = ClientCache.clearExpired();
   if (cleared > 0) {
-    console.log(`🧹 已清理 ${cleared} 个过期缓存项`);
+    console.log(`🧹 ${i18n.tf('client.clearedCacheItems', cleared)}`);
   }
 }, 5 * 60 * 1000);
 
@@ -243,6 +299,8 @@ const sidebarOverlay = document.getElementById('sidebarOverlay');
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
   ThemeManager.init(); // 初始化主题
+  i18n.init(); // 初始化国际化（同步）
+  i18n.initElements(); // 初始化页面元素的翻译
   loadConfig();
   await loadPosts(); // 等待文章列表加载完成
   setupEventListeners();
@@ -279,7 +337,7 @@ async function loadConfig() {
       checkAndReloadConfig();
     }
   } catch (error) {
-    console.error('加载配置失败:', error);
+    console.error(i18n.t('client.loadConfigFailed'), error);
   }
 }
 
@@ -428,7 +486,7 @@ function applyConfig(config) {
           generateHomeTOC();
         }
       } catch (error) {
-        console.error('加载首页内容失败:', error);
+        console.error(i18n.t('client.loadHomeContentFailed'), error);
         // 如果出错，显示默认欢迎页面
         const homeWelcome = document.getElementById('homeWelcome');
         if (homeWelcome) {
@@ -575,9 +633,9 @@ function setupEventListeners() {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>收起</span>
+          <span>${i18n.t('client.collapseAll')}</span>
         `;
-        collapseAllBtn.title = '收起所有目录';
+        collapseAllBtn.title = i18n.t('client.collapseDirs');
         isCollapsed = false;
       } else {
         // 收起所有目录
@@ -592,9 +650,9 @@ function setupEventListeners() {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M10.5 8.75L7 5.25L3.5 8.75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>展开</span>
+          <span>${i18n.t('client.expandAll')}</span>
         `;
-        collapseAllBtn.title = '展开所有目录';
+        collapseAllBtn.title = i18n.t('client.expandDirs');
         isCollapsed = true;
       }
     });
@@ -669,7 +727,7 @@ function goToHome() {
     // 滚动到顶部
     window.scrollTo(0, 0);
   } catch (error) {
-    console.error('返回首页失败:', error);
+    console.error(i18n.t('client.goHomeFailed'), error);
   }
 }
 
@@ -710,8 +768,8 @@ function setupRouting() {
         setTimeout(() => clearInterval(checkInterval), 5000);
       }
     } catch (error) {
-      console.error('路径解码失败:', error);
-      showNotification('路径解析失败', 'error');
+      console.error(i18n.t('client.pathDecodeFailed'), error);
+      showNotification(i18n.t('client.pathParseFailed'), 'error');
     }
   }
 }
@@ -732,6 +790,7 @@ async function loadPosts() {
 
     postList.innerHTML = `<li class="nav-item loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
+      <span style="margin-left: 8px;">${i18n.t('client.loading')}</span>
     </li>`;
     const response = await fetch('/api/posts');
     const data = await response.json();
@@ -743,8 +802,8 @@ async function loadPosts() {
 
     renderPostsTree(postsTree);
   } catch (error) {
-    postList.innerHTML = '<li class="nav-item loading">加载失败</li>';
-    console.error('加载文章列表失败:', error);
+    postList.innerHTML = `<li class="nav-item loading">${i18n.t('client.loadPostsFailed')}</li>`;
+    console.error(i18n.t('client.loadPostsFailed'), error);
   }
 }
 
@@ -771,7 +830,7 @@ async function updatePostsInBackground() {
       ClientCache.set('posts', '', data);
     }
   } catch (error) {
-    console.warn('后台更新文章列表失败:', error);
+    console.warn(i18n.t('client.backgroundUpdatePostsFailed'), error);
   }
 }
 
@@ -793,7 +852,7 @@ function toggleDirExpand(dirItem) {
 // 渲染目录树
 function renderPostsTree(tree) {
   if (!tree || (Object.keys(tree.dirs || {}).length === 0 && (tree.files || []).length === 0)) {
-    postList.innerHTML = '<li class="nav-item loading" style="color: var(--text-placeholder);">暂无文章</li>';
+    postList.innerHTML = `<li class="nav-item loading" style="color: var(--text-placeholder);">${i18n.t('client.noArticles')}</li>`;
     return;
   }
 
@@ -1026,10 +1085,10 @@ async function loadPost(filePath) {
 
     renderPost(post);
   } catch (error) {
-    console.error('加载文章失败:', error);
-    showNotification('加载文章失败: ' + error.message, 'error');
+    console.error(i18n.t('client.loadPostFailed'), error);
+    showNotification(i18n.t('client.loadPostFailed') + ': ' + error.message, 'error');
     // 文章不存在时自动跳转到首页
-    if (error.message === '文章不存在') {
+    if (error.message === 'Article not found' || error.message === '文章不存在') {
       setTimeout(() => {
         window.location.href = '/';
       }, 1000);
@@ -1155,7 +1214,7 @@ function renderPost(post) {
         <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/>
         <path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
-      <span>更新时间：${updatedDateText}</span>
+      <span>${i18n.tf('client.updatedTime', updatedDateText)}</span>
     `;
     postBody.appendChild(updatedTimeDiv);
   }
@@ -1178,8 +1237,8 @@ function renderPost(post) {
         </svg>
       </div>
       <div class="license-text">
-        <p class="license-title">版权声明</p>
-        <p class="license-description">如无特别说明，本文档为作者原创内容。本文档基于 <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT 许可证</a> 发布。</p>
+        <p class="license-title">${i18n.t('client.copyright')}</p>
+        <p class="license-description">${i18n.t('client.copyrightText')} <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">${i18n.t('client.license')}</a></p>
       </div>
     </div>
   `;
@@ -1292,7 +1351,7 @@ async function updatePostInBackground(filePath) {
       ClientCache.set('post', filePath, post);
     }
   } catch (error) {
-    console.warn('后台更新文章失败:', error);
+    console.warn(i18n.t('client.backgroundUpdatePostFailed'), error);
   }
 }
 
@@ -1613,7 +1672,7 @@ async function updateFooterStats(forceRefresh = false) {
 
     updateStatsUI(stats);
   } catch (error) {
-    console.error('更新统计信息失败:', error);
+    console.error(i18n.t('client.updateStatsFailed'), error);
   }
 }
 
@@ -1641,7 +1700,7 @@ async function updateStatsInBackground() {
     ClientCache.set('stats', '', stats, 30 * 1000);
     updateStatsUI(stats);
   } catch (error) {
-    console.warn('后台更新统计数据失败:', error);
+    console.warn(i18n.t('client.backgroundUpdateStatsFailed'), error);
   }
 }
 
@@ -1650,7 +1709,7 @@ async function renderPdfAsImages(pdfUrl) {
   const pagesContainer = document.getElementById('pdfPages');
   if (!pagesContainer) return;
 
-  pagesContainer.innerHTML = '<div class="pdf-loading">加载中...</div>';
+  pagesContainer.innerHTML = `<div class="pdf-loading">${i18n.t('client.pdfLoading')}</div>`;
 
   try {
     // 动态导入 PDF.js
@@ -1699,8 +1758,8 @@ async function renderPdfAsImages(pdfUrl) {
       pagesContainer.appendChild(canvas);
     }
   } catch (error) {
-    console.error('PDF 加载失败:', error);
-    pagesContainer.innerHTML = '<div class="pdf-error">PDF 加载失败</div>';
+    console.error(i18n.t('client.pdfLoadFailed'), error);
+    pagesContainer.innerHTML = `<div class="pdf-error">${i18n.t('client.pdfLoadFailed')}</div>`;
   }
 }
 
@@ -1711,7 +1770,7 @@ function openImageViewer(imageSrc, currentPage, totalPages) {
   overlay.className = 'image-viewer-overlay';
   overlay.innerHTML = `
     <div class="image-viewer-header">
-      <span class="image-viewer-info">${currentPage} / ${totalPages}</span>
+      <span class="image-viewer-info">${i18n.tf('client.pageOf', currentPage, totalPages)}</span>
       <button class="image-viewer-close" title="关闭">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -1821,13 +1880,13 @@ function addCopyButtonsToCodeBlocks(container = null) {
     // 创建复制按钮
     const copyBtn = document.createElement('button');
     copyBtn.className = 'code-copy-btn';
-    copyBtn.title = '复制代码';
+    copyBtn.title = i18n.t('client.copyCode');
     copyBtn.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
         <path d="M3 11V3a2 2 0 0 1 2-2h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
-      <span class="copy-text">复制</span>
+      <span class="copy-text">${i18n.t('client.copy')}</span>
     `;
 
     // 设置 pre 为相对定位
@@ -1843,12 +1902,12 @@ function addCopyButtonsToCodeBlocks(container = null) {
         copyBtn.classList.add('copied');
         const copyText = copyBtn.querySelector('.copy-text');
         if (copyText) {
-          copyText.textContent = '已复制';
+          copyText.textContent = i18n.t('client.copied');
         }
         setTimeout(() => {
           copyBtn.classList.remove('copied');
           if (copyText) {
-            copyText.textContent = '复制';
+            copyText.textContent = i18n.t('client.copy');
           }
         }, 2000);
       } catch (err) {
@@ -1864,16 +1923,16 @@ function addCopyButtonsToCodeBlocks(container = null) {
           copyBtn.classList.add('copied');
           const copyText = copyBtn.querySelector('.copy-text');
           if (copyText) {
-            copyText.textContent = '已复制';
+            copyText.textContent = i18n.t('client.copied');
           }
           setTimeout(() => {
             copyBtn.classList.remove('copied');
             if (copyText) {
-              copyText.textContent = '复制';
+              copyText.textContent = i18n.t('client.copy');
             }
           }, 2000);
         } catch (err2) {
-          showNotification('复制失败', 'error');
+          showNotification(i18n.t('client.copyFailed'), 'error');
         }
         document.body.removeChild(textarea);
       }
