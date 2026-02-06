@@ -2,26 +2,6 @@
 function encodePath(path) {
   return path.split('/').map(part => encodeURIComponent(part)).join('/');
 }
-// 根据 tag 字符串计算颜色（Outline 风格）
-function getTagColors(tag) {
-  // 计算字符串哈希值
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash; // 转换为32位整数
-  }
-  
-  // 将哈希值映射到色相 (0-360)
-  const hue = Math.abs(hash) % 360;
-  
-  // Outline 风格 - 透明背景 + 彩色边框/文字，悬停时浅色填充
-  const color = `hsl(${hue}, 55%, 45%)`;
-  const hoverBg = `hsl(${hue}, 50%, 95%)`;
-  return { color, hoverBg };
-}
-
-// Tag 图标 SVG
-const TAG_ICON_SVG = `<svg class="tag-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5V3a1 1 0 0 1 1-1h5.5a1 1 0 0 1 .7.3l5.5 5.5a1 1 0 0 1 0 1.4l-5.5 5.5a1 1 0 0 1-1.4 0L2.3 9.2a1 1 0 0 1-.3-.7z"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/></svg>`;
 
 // 主题管理
 const ThemeManager = {
@@ -56,6 +36,7 @@ const ThemeManager = {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(this.STORAGE_KEY, theme);
     this.updateToggleIcon(theme);
+    if (window.TagFeature) window.TagFeature.refresh(); // 刷新 Tag 颜色
   },
   
   toggle() {
@@ -1127,18 +1108,9 @@ function renderPost(post) {
     postDate.appendChild(dateSpan);
   }
 
-  // 渲染 tags（Outline 风格）
-  if (postTags) {
-    if (post.tags && post.tags.length > 0) {
-      postTags.innerHTML = post.tags.map(tag => {
-        const colors = getTagColors(tag);
-        return `<span class="tag-item" style="color: ${colors.color};" onmouseenter="this.style.background='${colors.hoverBg}'" onmouseleave="this.style.background='transparent'">${TAG_ICON_SVG}${escapeHtml(tag)}</span>`;
-      }).join('');
-      postTags.style.display = 'flex';
-    } else {
-      postTags.innerHTML = '';
-      postTags.style.display = 'none';
-    }
+  // 渲染 tags（使用扩展模块）
+  if (window.TagFeature) {
+    window.TagFeature.render(post.tags, escapeHtml);
   }
 
   // 添加更新时间到文章末尾（右下角）
