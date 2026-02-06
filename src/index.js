@@ -223,9 +223,24 @@ try {
   config.pages.home = config.pages.home || '';
   config.pages.about = config.pages.about || '';
 } catch (error) {
-  console.error(`❌ ${t('error.configNotFound')}`);
-  console.error(`💡 ${t('tip.configNotFoundTip')}`);
-  process.exit(1);
+  // 配置文件不存在，尝试加载示例配置
+  const exampleConfigPath = path.join(__dirname, '..', 'config.example.json');
+  
+  try {
+    config = require(exampleConfigPath);
+    console.warn('⚠️  警告: 未找到 config.json，已自动使用示例配置文件');
+    console.warn('⚠️  Warning: config.json not found, using example config');
+    console.warn(`💡 提示: 请创建 config.json 文件以使用自定义配置`);
+    console.warn(`💡 Tip: Please create config.json for custom configuration`);
+    
+    config.pages = config.pages || {};
+    config.pages.home = config.pages.home || '';
+    config.pages.about = config.pages.about || '';
+  } catch (exampleError) {
+    console.error(`❌ ${t('error.configNotFound')}`);
+    console.error(`💡 ${t('tip.configNotFoundTip')}`);
+    process.exit(1);
+  }
 }
 
 // 初始化 GitManager
