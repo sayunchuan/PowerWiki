@@ -41,7 +41,7 @@ const ThemeManager = {
     if (typeof mermaid !== 'undefined') {
       mermaid.initialize({
         startOnLoad: false,
-        theme: theme === 'dark' ? 'dark' : 'default',
+        theme: 'default',
         securityLevel: 'loose'
       });
       // 重新渲染当前页面上的 Mermaid 图表
@@ -80,10 +80,9 @@ const ThemeManager = {
 
 // 初始化 Mermaid 图表渲染
 if (typeof mermaid !== 'undefined') {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   mermaid.initialize({
     startOnLoad: false,
-    theme: isDark ? 'dark' : 'default',
+    theme: 'default',
     securityLevel: 'loose'
   });
 }
