@@ -120,9 +120,9 @@ npm start
 
 ## Docker 배포
 
-### 공식 Docker 이미지
+### Docker 이미지
 
-PowerWiki의 공식 Docker 이미지는 **[@sayunchuan](https://github.com/sayunchuan)** 에 의해 유지됩니다.
+**[@sayunchuan](https://github.com/sayunchuan)** 이 PowerWiki의 Docker 이미지를 제공합니다.
 
 - **이미지 이름**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -178,7 +178,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**감사의 말**: [@sayunchuan](https://github.com/sayunchuan) 님께 감사드립니다. PowerWiki 커뮤니티에 공식 Docker 이미지를 제공하고 유지 관리하여 사용자가 더 편리하게 PowerWiki를 배포할 수 있게 되었습니다.
+**감사의 말**: [@sayunchuan](https://github.com/sayunchuan) 님께 감사드립니다. PowerWiki의 Docker 이미지를 제공하여 배포가 더욱 편리해졌습니다.
 
 ## 기사 구성
 

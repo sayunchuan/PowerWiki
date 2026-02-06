@@ -120,9 +120,9 @@ Editar `config.json`：
 
 ## Despliegue con Docker
 
-### Imagen oficial de Docker
+### Imagen Docker
 
-La imagen oficial de Docker de PowerWiki es mantenida por **[@sayunchuan](https://github.com/sayunchuan)**.
+**[@sayunchuan](https://github.com/sayunchuan)** proporciona una imagen Docker para PowerWiki.
 
 - **Imagen**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -178,7 +178,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**Agradecimiento**: Gracias a [@sayunchuan](https://github.com/sayunchuan) por proporcionar y mantener la imagen oficial de Docker, haciendo que el despliegue de PowerWiki sea más conveniente.
+**Agradecimiento**: Gracias a [@sayunchuan](https://github.com/sayunchuan) por proporcionar la imagen Docker, haciendo que el despliegue de PowerWiki sea más conveniente.
 
 ## Organización de Artículos
 

@@ -153,9 +153,9 @@ Copy `.env.example` to `.env` and customize as needed.
 
 ## 🐳 Docker Deployment
 
-### Official Docker Image
+### Docker Image
 
-PowerWiki's official Docker image is maintained by **[@sayunchuan](https://github.com/sayunchuan)**.
+**[@sayunchuan](https://github.com/sayunchuan)** provides a Docker image for PowerWiki.
 
 - **Image**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -211,7 +211,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**Acknowledgment**: Thanks to [@sayunchuan](https://github.com/sayunchuan) for providing and maintaining the official Docker image, making PowerWiki deployment more convenient.
+**Acknowledgment**: Thanks to [@sayunchuan](https://github.com/sayunchuan) for providing the Docker image, making PowerWiki deployment more convenient.
 
 ## 📂 Article Organization
 

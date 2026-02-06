@@ -119,9 +119,9 @@ npm start```
 
 ## Docker-развёртывание
 
-### Официальный Docker-образ
+### Docker-образ
 
-Официальный Docker-образ PowerWiki поддерживается **[@sayunchuan](https://github.com/sayunchuan)**.
+**[@sayunchuan](https://github.com/sayunchuan)** предоставляет Docker-образ для PowerWiki.
 
 - **Образ**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -177,7 +177,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**Благодарность**: Спасибо [@sayunchuan](https://github.com/sayunchuan) за предоставление и поддержку официального Docker-образа, что делает развёртывание PowerWiki более удобным.
+**Благодарность**: Спасибо [@sayunchuan](https://github.com/sayunchuan) за предоставление Docker-образа, что делает развёртывание PowerWiki более удобным.
 
 ## Организация статей
 

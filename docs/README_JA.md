@@ -120,9 +120,9 @@ npm start
 
 ## Docker デプロイ
 
-### 公式 Docker イメージ
+### Docker イメージ
 
-PowerWiki の公式 Docker イメージは **[@sayunchuan](https://github.com/sayunchuan)** によって維持されています。
+**[@sayunchuan](https://github.com/sayunchuan)** が PowerWiki の Docker イメージを提供しています。
 
 - **イメージ名**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -178,7 +178,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**謝辞**: [@sayunchuan](https://github.com/sayunchuan) 氏に感謝します。PowerWiki コミュニティに公式 Docker イメージを提供・維持していただき、ユーザーがより便利に PowerWiki をデプロイできるようになりました。
+**謝辞**: [@sayunchuan](https://github.com/sayunchuan) 氏に感謝します。PowerWiki の Docker イメージを提供していただき、デプロイがより便利になりました。
 
 ## 記事の整理
 

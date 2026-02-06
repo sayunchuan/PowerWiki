@@ -153,9 +153,9 @@ LANG=zh-CN
 
 ## 🐳 Docker 部署
 
-### 官方 Docker 镜像
+### Docker 镜像
 
-PowerWiki 的官方 Docker 镜像由 **[@sayunchuan](https://github.com/sayunchuan)** 维护。
+**[@sayunchuan](https://github.com/sayunchuan)** 为 PowerWiki 提供了 Docker 镜像。
 
 - **镜像名称**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -211,7 +211,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**致谢**: 感谢 [@sayunchuan](https://github.com/sayunchuan) 为 PowerWiki 社区提供和维护官方 Docker 镜像，使得用户可以更便捷地部署 PowerWiki。
+**致谢**: 感谢 [@sayunchuan](https://github.com/sayunchuan) 为 PowerWiki 提供 Docker 镜像，使得部署更加便捷。
 
 ## 📂 文章组织
 

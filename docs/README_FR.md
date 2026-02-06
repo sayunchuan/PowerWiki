@@ -120,9 +120,9 @@ Visitez `http://localhost:3150` dans votre navigateur.
 
 ## Déploiement Docker
 
-### Image Docker officielle
+### Image Docker
 
-L'image Docker officielle de PowerWiki est maintenue par **[@sayunchuan](https://github.com/sayunchuan)**.
+**[@sayunchuan](https://github.com/sayunchuan)** fournit une image Docker pour PowerWiki.
 
 - **Image**: `sayunchuan/powerwiki`
 - **Docker Hub**: [sayunchuan/powerwiki](https://hub.docker.com/r/sayunchuan/powerwiki)
@@ -178,7 +178,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-**Remerciements**: Merci à [@sayunchuan](https://github.com/sayunchuan) pour avoir fourni et maintenu l'image Docker officielle, rendant le déploiement de PowerWiki plus pratique.
+**Remerciements**: Merci à [@sayunchuan](https://github.com/sayunchuan) pour avoir fourni l'image Docker, rendant le déploiement de PowerWiki plus pratique.
 
 ## Organisation des Articles
 
