@@ -153,13 +153,18 @@ app.get('/', async (req, res) => {
   try {
     let html = fs.readFileSync(indexHtmlPath, 'utf-8');
 
-    // 注入翻译数据到 HTML
-    const translationsScript = `<script>window.__I18N__ = ${JSON.stringify(translations)};</script>`;
-    html = html.replace(/(\s*)<\/head>/i, `${translationsScript}$1</head>`);
+    // 注入翻译数据到 HTML（在 </head> 之前）
+    const translationsScript = `\n    <script>window.__I18N__ = ${JSON.stringify(translations)};</script>`;
+    html = html.replace('</head>', `${translationsScript}\n</head>`);
 
     // 注入语言属性
     html = html.replace(/lang="zh-CN"/, `lang="${lang === 'en' ? 'en' : 'zh-CN'}"`);
 
+    // 禁用缓存
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.send(html);
   } catch (error) {
     console.error('[i18n] 注入翻译失败:', error);
@@ -167,8 +172,14 @@ app.get('/', async (req, res) => {
   }
 });
 
-// 静态文件中间件（放在首页路由之后）
-app.use(express.static('public'));
+// 翻译数据 API（在静态文件之前，让所有页面都能获取翻译）
+app.get('/api/i18n', (req, res) => {
+  const translations = getFrontendTranslations();
+  res.json(translations);
+});
+
+// 静态文件中间件（放在首页路由之后，禁用 index.html 自动处理）
+app.use(express.static('public', { index: false }));
 app.use('/pdfjs', express.static(path.join(__dirname, '..', 'node_modules', 'pdfjs-dist')));
 
 /**
@@ -212,9 +223,22 @@ try {
   config.pages.home = config.pages.home || '';
   config.pages.about = config.pages.about || '';
 } catch (error) {
-  console.error(`❌ ${t('error.configNotFound')}`);
-  console.error(`💡 ${t('tip.configNotFoundTip')}`);
-  process.exit(1);
+  // 配置文件不存在，尝试加载示例配置
+  const exampleConfigPath = path.join(__dirname, '..', 'config.example.json');
+  
+  try {
+    config = require(exampleConfigPath);
+    console.warn(`⚠️  ${t('tip.usingExampleConfig')}`);
+    console.warn(`💡 ${t('tip.createCustomConfig')}`);
+    
+    config.pages = config.pages || {};
+    config.pages.home = config.pages.home || '';
+    config.pages.about = config.pages.about || '';
+  } catch (exampleError) {
+    console.error(`❌ ${t('error.configNotFound')}`);
+    console.error(`💡 ${t('tip.configNotFoundTip')}`);
+    process.exit(1);
+  }
 }
 
 // 初始化 GitManager
