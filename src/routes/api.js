@@ -648,30 +648,67 @@ function createApiRoutes(options) {
       return res.status(400).json({ error: 'IP address is required' });
     }
 
-    try {
-      const http = require('http');
-      const url = `http://ipwho.is/${ip}`;
-      
-      http.get(url, (response) => {
-        let data = '';
-        response.on('data', (chunk) => data += chunk);
-        response.on('end', () => {
-          try {
-            const result = JSON.parse(data);
-            if (result.success && result.country) {
-              const parts = [result.country, result.region, result.city].filter(Boolean);
-              const location = parts.join(' ');
-              res.json({ success: true, ip, location });
-            } else {
-              res.json({ success: false, ip, location: '未知' });
+    // 优先使用 ip-api.com（中文，准确），失败则降级到 ipwho.is
+    const tryIpApi = () => {
+      return new Promise((resolve, reject) => {
+        const http = require('http');
+        const url = `http://ip-api.com/json/${ip}?fields=status,country,regionName,city&lang=zh-CN`;
+        
+        const request = http.get(url, { timeout: 3000 }, (response) => {
+          let data = '';
+          response.on('data', (chunk) => data += chunk);
+          response.on('end', () => {
+            try {
+              const result = JSON.parse(data);
+              if (result.status === 'success') {
+                const parts = [result.country, result.regionName, result.city].filter(Boolean);
+                resolve(parts.join(' '));
+              } else {
+                reject(new Error('API failed'));
+              }
+            } catch (e) {
+              reject(e);
             }
-          } catch (e) {
-            res.json({ success: false, ip, location: '未知' });
-          }
+          });
         });
-      }).on('error', () => {
-        res.json({ success: false, ip, location: '未知' });
+        
+        request.on('error', reject);
+        request.on('timeout', () => {
+          request.destroy();
+          reject(new Error('Timeout'));
+        });
       });
+    };
+
+    const tryIpWho = () => {
+      return new Promise((resolve, reject) => {
+        const http = require('http');
+        const url = `http://ipwho.is/${ip}`;
+        
+        http.get(url, (response) => {
+          let data = '';
+          response.on('data', (chunk) => data += chunk);
+          response.on('end', () => {
+            try {
+              const result = JSON.parse(data);
+              if (result.success && result.country) {
+                const parts = [result.country, result.region, result.city].filter(Boolean);
+                resolve(parts.join(' '));
+              } else {
+                reject(new Error('API failed'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }).on('error', reject);
+      });
+    };
+
+    try {
+      // 先尝试 ip-api.com
+      const location = await tryIpApi().catch(() => tryIpWho());
+      res.json({ success: true, ip, location });
     } catch (error) {
       res.json({ success: false, ip, location: '未知' });
     }
