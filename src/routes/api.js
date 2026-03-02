@@ -652,9 +652,20 @@ function createApiRoutes(options) {
     const tryIpApi = () => {
       return new Promise((resolve, reject) => {
         const http = require('http');
-        const url = `http://ip-api.com/json/${ip}?fields=status,country,regionName,city&lang=zh-CN`;
+        const options = {
+          hostname: 'ip-api.com',
+          path: `/json/${ip}?fields=status,country,regionName,city&lang=zh-CN`,
+          method: 'GET',
+          timeout: 5000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'keep-alive'
+          }
+        };
         
-        const request = http.get(url, { timeout: 3000 }, (response) => {
+        const request = http.request(options, (response) => {
           let data = '';
           response.on('data', (chunk) => data += chunk);
           response.on('end', () => {
@@ -677,6 +688,8 @@ function createApiRoutes(options) {
           request.destroy();
           reject(new Error('Timeout'));
         });
+        
+        request.end();
       });
     };
 
