@@ -648,6 +648,8 @@ function createApiRoutes(options) {
       return res.status(400).json({ error: 'IP address is required' });
     }
 
+    console.log(`[IP查询] 开始查询: ${ip}`);
+
     try {
       const http = require('http');
       const options = {
@@ -666,35 +668,43 @@ function createApiRoutes(options) {
       };
       
       const request = http.request(options, (response) => {
+        console.log(`[IP查询] 响应状态: ${response.statusCode}`);
         let data = '';
         response.on('data', (chunk) => data += chunk);
         response.on('end', () => {
+          console.log(`[IP查询] 响应数据: ${data}`);
           try {
             const result = JSON.parse(data);
             if (result.status === 'success' || result.country) {
               const parts = [result.country, result.regionName, result.city].filter(Boolean);
               const location = parts.join(' ') || '未知';
+              console.log(`[IP查询] 成功: ${ip} -> ${location}`);
               res.json({ success: true, ip, location });
             } else {
+              console.log(`[IP查询] API返回失败: ${result.message || '无数据'}`);
               res.json({ success: false, ip, location: '未知' });
             }
           } catch (e) {
+            console.error(`[IP查询] 解析错误:`, e.message);
             res.json({ success: false, ip, location: '未知' });
           }
         });
       });
       
-      request.on('error', () => {
+      request.on('error', (err) => {
+        console.error(`[IP查询] 请求错误:`, err.message);
         res.json({ success: false, ip, location: '未知' });
       });
       
       request.on('timeout', () => {
+        console.error(`[IP查询] 请求超时`);
         request.destroy();
         res.json({ success: false, ip, location: '未知' });
       });
       
       request.end();
     } catch (error) {
+      console.error(`[IP查询] 异常:`, error.message);
       res.json({ success: false, ip, location: '未知' });
     }
   });
