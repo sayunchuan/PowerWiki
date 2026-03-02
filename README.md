@@ -128,6 +128,7 @@ Edit `config.json`:
 | `siteTitle` | Site title | `PowerWiki` |
 | `siteDescription` | Site description | `Wiki` |
 | `autoSyncInterval` | Auto sync interval (ms) | `180000` |
+| `sortOrder` | Sort order (`modified` or `name`) | `modified` |
 | `pages.home` | Home page file | `""` |
 | `pages.about` | About page file | `""` |
 
