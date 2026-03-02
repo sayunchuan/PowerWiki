@@ -114,6 +114,7 @@ npm start```
 | `siteTitle` | Заголовок сайта | `PowerWiki` |
 | `siteDescription` | Описание сайта | `Wiki` |
 | `autoSyncInterval` | Интервал авто-синхронизации (мс) | `180000` |
+| `sortOrder` | Порядок сортировки (`modified` или `name`) | `modified` |
 | `pages.home` | Файл главной страницы | `""` |
 | `pages.about` | Файл страницы О нас | `""` |
 

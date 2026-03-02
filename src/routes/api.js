@@ -18,7 +18,7 @@ const { t } = require('../config/i18n');
 /**
  * 构建目录树结构
  */
-function buildDirectoryTree(files) {
+function buildDirectoryTree(files, config) {
   const tree = {};
 
   files.forEach(file => {
@@ -68,9 +68,14 @@ function buildDirectoryTree(files) {
     }
   });
 
-  function sortTree(node) {
+  function sortTree(node, sortOrder) {
+    const sortByName = sortOrder === 'name';
+
     if (node.files) {
       node.files.sort((a, b) => {
+        if (sortByName) {
+          return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+        }
         const timeA = new Date(a.modified).getTime();
         const timeB = new Date(b.modified).getTime();
         return timeB - timeA;
@@ -82,7 +87,7 @@ function buildDirectoryTree(files) {
 
       dirs.forEach(dirName => {
         const dirNode = node.dirs[dirName];
-        sortTree(dirNode);
+        sortTree(dirNode, sortOrder);
 
         let maxTime = null;
         if (dirNode.files && dirNode.files.length > 0) {
@@ -100,6 +105,9 @@ function buildDirectoryTree(files) {
       });
 
       dirs.sort((a, b) => {
+        if (sortByName) {
+          return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        }
         const timeA = node.dirs[a]._maxModified || 0;
         const timeB = node.dirs[b]._maxModified || 0;
         return timeB - timeA;
@@ -113,7 +121,8 @@ function buildDirectoryTree(files) {
     }
   }
 
-  sortTree(tree);
+  const sortOrder = config.sortOrder || 'modified';
+  sortTree(tree, sortOrder);
 
   function cleanTree(node) {
     if (node._maxModified !== undefined) {
@@ -281,7 +290,7 @@ function createApiRoutes(options) {
       }
 
       const files = await gitManager.getAllMarkdownFiles(config.mdPath);
-      const tree = buildDirectoryTree(files);
+      const tree = buildDirectoryTree(files, config);
       const result = { tree, flat: files };
 
       cacheManager.set('posts', '', result, 10 * 60 * 1000);
@@ -638,6 +647,30 @@ function createApiRoutes(options) {
     } catch (error) {
       console.error(`❌ ${t('stats.getAdminStatsFailed')}:`, error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // API: 查询 IP 归属地（使用离线 IP 库）
+  router.get('/ip/location', async (req, res) => {
+    const { ip } = req.query;
+    if (!ip) {
+      return res.status(400).json({ error: 'IP address is required' });
+    }
+
+    try {
+      const IP2Region = require('ip2region').default;
+      const query = new IP2Region();
+      const result = query.search(ip);
+      
+      if (result && result.country) {
+        const parts = [result.country, result.province, result.city].filter(Boolean);
+        const location = parts.join(' ') || '未知';
+        res.json({ success: true, ip, location });
+      } else {
+        res.json({ success: false, ip, location: '未知' });
+      }
+    } catch (error) {
+      res.json({ success: false, ip, location: '未知' });
     }
   });
 

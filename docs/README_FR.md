@@ -115,6 +115,7 @@ Visitez `http://localhost:3150` dans votre navigateur.
 | `siteTitle` | Titre du site | `PowerWiki` |
 | `siteDescription` | Description du site | `Wiki` |
 | `autoSyncInterval` | Intervalle de sync automatique (ms) | `180000` |
+| `sortOrder` | Ordre de tri (`modified` ou `name`) | `modified` |
 | `pages.home` | Fichier de la page d'accueil | `""` |
 | `pages.about` | Fichier de la page À propos | `""` |
 
