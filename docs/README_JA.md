@@ -115,6 +115,7 @@ npm start
 | `siteTitle` | サイトタイトル | `PowerWiki` |
 | `siteDescription` | サイト説明 | `Wiki` |
 | `autoSyncInterval` | 自動同期間隔（ミリ秒） | `180000` |
+| `sortOrder` | ソート順序 (`modified` または `name`) | `modified` |
 | `pages.home` | ホームページファイル | `""` |
 | `pages.about` | About ページファイル | `""` |
 

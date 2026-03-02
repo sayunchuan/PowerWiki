@@ -115,6 +115,7 @@ Editar `config.json`：
 | `siteTitle` | Título del sitio | `PowerWiki` |
 | `siteDescription` | Descripción del sitio | `Wiki` |
 | `autoSyncInterval` | Intervalo de sincronización automática (ms) | `180000` |
+| `sortOrder` | Orden de clasificación (`modified` o `name`) | `modified` |
 | `pages.home` | Archivo de página de inicio | `""` |
 | `pages.about` | Archivo de página Acerca de | `""` |
 

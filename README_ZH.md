@@ -128,6 +128,7 @@ npm start
 | `siteTitle` | 网站标题 | `PowerWiki` |
 | `siteDescription` | 网站描述 | `知识库` |
 | `autoSyncInterval` | 自动同步间隔（毫秒） | `180000` |
+| `sortOrder` | 排序方式 (`modified` 或 `name`) | `modified` |
 | `pages.home` | 首页文件 | `""` |
 | `pages.about` | 关于页面文件 | `""` |
 

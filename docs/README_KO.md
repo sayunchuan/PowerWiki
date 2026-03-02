@@ -115,6 +115,7 @@ npm start
 | `siteTitle` | 사이트 제목 | `PowerWiki` |
 | `siteDescription` | 사이트 설명 | `Wiki` |
 | `autoSyncInterval` | 자동 동기화 간격 (ms) | `180000` |
+| `sortOrder` | 정렬 순서 (`modified` 또는 `name`) | `modified` |
 | `pages.home` | 홈 페이지 파일 | `""` |
 | `pages.about` | About 페이지 파일 | `""` |
 
