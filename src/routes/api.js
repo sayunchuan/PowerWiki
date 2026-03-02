@@ -648,80 +648,52 @@ function createApiRoutes(options) {
       return res.status(400).json({ error: 'IP address is required' });
     }
 
-    // 优先使用 ip-api.com（中文，准确），失败则降级到 ipwho.is
-    const tryIpApi = () => {
-      return new Promise((resolve, reject) => {
-        const http = require('http');
-        const options = {
-          hostname: 'ip-api.com',
-          path: `/json/${ip}?fields=status,country,regionName,city&lang=zh-CN`,
-          method: 'GET',
-          timeout: 5000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive'
-          }
-        };
-        
-        const request = http.request(options, (response) => {
-          let data = '';
-          response.on('data', (chunk) => data += chunk);
-          response.on('end', () => {
-            try {
-              const result = JSON.parse(data);
-              if (result.status === 'success') {
-                const parts = [result.country, result.regionName, result.city].filter(Boolean);
-                resolve(parts.join(' '));
-              } else {
-                reject(new Error('API failed'));
-              }
-            } catch (e) {
-              reject(e);
-            }
-          });
-        });
-        
-        request.on('error', reject);
-        request.on('timeout', () => {
-          request.destroy();
-          reject(new Error('Timeout'));
-        });
-        
-        request.end();
-      });
-    };
-
-    const tryIpWho = () => {
-      return new Promise((resolve, reject) => {
-        const http = require('http');
-        const url = `http://ipwho.is/${ip}`;
-        
-        http.get(url, (response) => {
-          let data = '';
-          response.on('data', (chunk) => data += chunk);
-          response.on('end', () => {
-            try {
-              const result = JSON.parse(data);
-              if (result.success && result.country) {
-                const parts = [result.country, result.region, result.city].filter(Boolean);
-                resolve(parts.join(' '));
-              } else {
-                reject(new Error('API failed'));
-              }
-            } catch (e) {
-              reject(e);
-            }
-          });
-        }).on('error', reject);
-      });
-    };
-
     try {
-      // 先尝试 ip-api.com
-      const location = await tryIpApi().catch(() => tryIpWho());
-      res.json({ success: true, ip, location });
+      const http = require('http');
+      const options = {
+        hostname: 'demo.ip-api.com',
+        path: `/json/${ip}?lang=zh-CN`,
+        method: 'GET',
+        timeout: 5000,
+        headers: {
+          'Accept': '*/*',
+          'Accept-Language': 'zh-CN,zh;q=0.9',
+          'Connection': 'keep-alive',
+          'Origin': 'http://ip-api.com',
+          'Referer': 'http://ip-api.com/',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'
+        }
+      };
+      
+      const request = http.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.status === 'success' || result.country) {
+              const parts = [result.country, result.regionName, result.city].filter(Boolean);
+              const location = parts.join(' ') || '未知';
+              res.json({ success: true, ip, location });
+            } else {
+              res.json({ success: false, ip, location: '未知' });
+            }
+          } catch (e) {
+            res.json({ success: false, ip, location: '未知' });
+          }
+        });
+      });
+      
+      request.on('error', () => {
+        res.json({ success: false, ip, location: '未知' });
+      });
+      
+      request.on('timeout', () => {
+        request.destroy();
+        res.json({ success: false, ip, location: '未知' });
+      });
+      
+      request.end();
     } catch (error) {
       res.json({ success: false, ip, location: '未知' });
     }
