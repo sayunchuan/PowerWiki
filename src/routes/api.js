@@ -641,70 +641,27 @@ function createApiRoutes(options) {
     }
   });
 
-  // API: 查询 IP 归属地
+  // API: 查询 IP 归属地（使用离线 IP 库）
   router.get('/ip/location', async (req, res) => {
     const { ip } = req.query;
     if (!ip) {
       return res.status(400).json({ error: 'IP address is required' });
     }
 
-    console.log(`[IP查询] 开始查询: ${ip}`);
-
     try {
-      const http = require('http');
-      const options = {
-        hostname: 'demo.ip-api.com',
-        path: `/json/${ip}?lang=zh-CN`,
-        method: 'GET',
-        timeout: 5000,
-        headers: {
-          'Accept': '*/*',
-          'Accept-Language': 'zh-CN,zh;q=0.9',
-          'Connection': 'keep-alive',
-          'Origin': 'http://ip-api.com',
-          'Referer': 'http://ip-api.com/',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'
-        }
-      };
+      const IP2Region = require('ip2region').default;
+      const query = new IP2Region();
+      const result = query.search(ip);
       
-      const request = http.request(options, (response) => {
-        console.log(`[IP查询] 响应状态: ${response.statusCode}`);
-        let data = '';
-        response.on('data', (chunk) => data += chunk);
-        response.on('end', () => {
-          console.log(`[IP查询] 响应数据: ${data}`);
-          try {
-            const result = JSON.parse(data);
-            if (result.status === 'success' || result.country) {
-              const parts = [result.country, result.regionName, result.city].filter(Boolean);
-              const location = parts.join(' ') || '未知';
-              console.log(`[IP查询] 成功: ${ip} -> ${location}`);
-              res.json({ success: true, ip, location });
-            } else {
-              console.log(`[IP查询] API返回失败: ${result.message || '无数据'}`);
-              res.json({ success: false, ip, location: '未知' });
-            }
-          } catch (e) {
-            console.error(`[IP查询] 解析错误:`, e.message);
-            res.json({ success: false, ip, location: '未知' });
-          }
-        });
-      });
-      
-      request.on('error', (err) => {
-        console.error(`[IP查询] 请求错误:`, err.message);
+      if (result && result.country) {
+        const parts = [result.country, result.province, result.city].filter(Boolean);
+        const location = parts.join(' ') || '未知';
+        res.json({ success: true, ip, location });
+      } else {
         res.json({ success: false, ip, location: '未知' });
-      });
-      
-      request.on('timeout', () => {
-        console.error(`[IP查询] 请求超时`);
-        request.destroy();
-        res.json({ success: false, ip, location: '未知' });
-      });
-      
-      request.end();
+      }
     } catch (error) {
-      console.error(`[IP查询] 异常:`, error.message);
+      console.error(`[IP查询] 错误:`, error.message);
       res.json({ success: false, ip, location: '未知' });
     }
   });
