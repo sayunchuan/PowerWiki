@@ -650,7 +650,7 @@ function createApiRoutes(options) {
 
     try {
       const http = require('http');
-      const url = `http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city&lang=zh-CN`;
+      const url = `http://ipwho.is/${ip}`;
       
       http.get(url, (response) => {
         let data = '';
@@ -658,8 +658,9 @@ function createApiRoutes(options) {
         response.on('end', () => {
           try {
             const result = JSON.parse(data);
-            if (result.status === 'success') {
-              const location = result.country ? `${result.country} ${result.regionName} ${result.city}` : '未知';
+            if (result.success && result.country) {
+              const parts = [result.country, result.region, result.city].filter(Boolean);
+              const location = parts.join(' ');
               res.json({ success: true, ip, location });
             } else {
               res.json({ success: false, ip, location: '未知' });
