@@ -1,0 +1,32 @@
+name: 功能建议
+description: 提交一个新功能或改进建议
+title: "[feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 功能描述
+      description: 你希望增加什么能力
+      placeholder: 例如：支持 Frontmatter Tags 在文章头部展示
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: 使用场景
+      description: 这个功能解决什么问题，谁会受益
+      placeholder: 例如：文章较多时，需要通过标签快速识别和筛选内容
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 可选，描述你期望的交互或实现方式
+      placeholder: 例如：在标题下方展示 tags，点击可筛选相关文章
+    validations:
+      required: false
