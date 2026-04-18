@@ -1,0 +1,46 @@
+name: Bug 反馈
+description: 报告一个可复现的问题
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 简要说明现象
+      placeholder: 例如：切换到无目录文章时，右侧仍显示上一篇目录
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 用最少步骤说明如何复现
+      placeholder: |
+        1. 打开 xxx
+        2. 点击 xxx
+        3. 看到 xxx
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+      placeholder: 例如：没有目录时应显示为空
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境信息
+      description: 可选，填写浏览器、系统、版本号等
+      placeholder: |
+        - PowerWiki:
+        - Browser:
+        - OS:
+    validations:
+      required: false
